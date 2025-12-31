@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
+import { SwipeableItem } from '@/components/SwipeableItem'
 import { ArrowLeft, Plus, Trash2, Check, GripVertical, Flag, Calendar } from 'lucide-react'
 import { useListStore } from '@/stores/listStore'
 import type { List, ListItem, Priority } from '@/types'
@@ -66,18 +67,20 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
 
   const isOverdue = item.due_date && new Date(item.due_date) < new Date() && !item.is_completed
 
-  return (
-    <GlassCard ref={setNodeRef} style={style} className={`group ${isOverdue ? 'border-red-500/50 bg-red-500/10' : ''}`} hover={false}>
+  const itemContent = (
+    <GlassCard className={`group ${isOverdue ? 'border-red-500/50 bg-red-500/10' : ''}`} hover={false} style={style}>
       <GlassCardContent className="flex items-center gap-3 p-3">
         <button
           {...attributes}
           {...listeners}
+          data-no-swipe="true"
           className="cursor-grab active:cursor-grabbing touch-none"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
         <button
           onClick={onToggle}
+          data-no-swipe="true"
           className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
             item.is_completed
               ? 'border-primary bg-primary'
@@ -99,7 +102,7 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
         </div>
 
         {/* Priority indicator */}
-        <div className="relative">
+        <div className="relative" data-no-swipe="true">
           <button
             onClick={() => setShowPriorityMenu(!showPriorityMenu)}
             className={`p-2 rounded-xl hover:bg-accent transition-colors ${priorityConfig.color}`}
@@ -127,17 +130,20 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
             </div>
           )}
         </div>
-
-        <Button
-          variant="glass"
-          size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
       </GlassCardContent>
     </GlassCard>
+  )
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <SwipeableItem
+        onDelete={onDelete}
+        onComplete={onToggle}
+        disabled={isDragging}
+      >
+        {itemContent}
+      </SwipeableItem>
+    </div>
   )
 }
 

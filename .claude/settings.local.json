@@ -10,7 +10,8 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(cat:*)",
-      "Bash(npm install @use-gesture/react)"
+      "Bash(npm install @use-gesture/react)",
+      "Bash(npm run build:*)"
     ]
   }
 }

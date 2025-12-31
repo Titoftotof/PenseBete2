@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import { useDrag } from '@use-gesture/react'
+import type { TouchEvent, MouseEvent } from 'react'
 import { Trash2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -12,8 +12,7 @@ interface SwipeableItemProps {
   className?: string
 }
 
-const SWIPE_THRESHOLD = 100
-const MAX_DRAG = 200
+const SWIPE_THRESHOLD = 80
 
 export function SwipeableItem({
   children,
@@ -22,91 +21,137 @@ export function SwipeableItem({
   disabled = false,
   className
 }: SwipeableItemProps) {
-  const [position, setPosition] = useState(0)
+  const [translateX, setTranslateX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const [showDelete, setShowDelete] = useState(false)
+  const [showComplete, setShowComplete] = useState(false)
 
-  const handleDelete = useCallback(() => {
-    if (onDelete) {
-      onDelete()
+  const startX = useRef(0)
+  const currentX = useRef(0)
+  const isSwipeActive = useRef(false)
+
+  const handleStart = useCallback((clientX: number) => {
+    if (disabled) return
+    startX.current = clientX
+    currentX.current = clientX
+    setIsDragging(true)
+    isSwipeActive.current = true
+  }, [disabled])
+
+  const handleMove = useCallback((clientX: number) => {
+    if (!isDragging || disabled || !isSwipeActive.current) return
+
+    const diff = clientX - startX.current
+    currentX.current = clientX
+
+    // Only allow horizontal swipe (detect if it's a drag or swipe)
+    if (Math.abs(diff) > 10) {
+      setTranslateX(diff)
+
+      // Show backgrounds based on direction
+      if (diff < -20) {
+        setShowDelete(true)
+        setShowComplete(false)
+      } else if (diff > 20) {
+        setShowComplete(true)
+        setShowDelete(false)
+      } else {
+        setShowDelete(false)
+        setShowComplete(false)
+      }
     }
-  }, [onDelete])
+  }, [isDragging, disabled])
 
-  const handleComplete = useCallback(() => {
-    if (onComplete) {
+  const handleEnd = useCallback(() => {
+    if (!isDragging || disabled) return
+
+    const diff = currentX.current - startX.current
+
+    // Trigger actions
+    if (diff < -SWIPE_THRESHOLD && onDelete) {
+      onDelete()
+    } else if (diff > SWIPE_THRESHOLD && onComplete) {
       onComplete()
     }
-  }, [onComplete])
 
-  const bind = useDrag(
-    ({ offset: [x], movement: [mx], down, cancel }) => {
-      if (disabled) {
-        cancel()
-        return
-      }
+    // Reset
+    setTranslateX(0)
+    setShowDelete(false)
+    setShowComplete(false)
+    setIsDragging(false)
+    isSwipeActive.current = false
+  }, [isDragging, disabled, onDelete, onComplete])
 
-      setIsDragging(down)
+  // Touch handlers
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0]
+    handleStart(touch.clientX)
+  }, [handleStart])
 
-      // Clamp the movement to prevent excessive dragging
-      const clampedX = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, x))
-      setPosition(clampedX)
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0]
+    handleMove(touch.clientX)
+  }, [handleMove])
 
-      // Trigger action on release
-      if (!down) {
-        if (mx < -SWIPE_THRESHOLD) {
-          handleDelete()
-        } else if (mx > SWIPE_THRESHOLD) {
-          handleComplete()
-        }
+  const handleTouchEnd = useCallback(() => {
+    handleEnd()
+  }, [handleEnd])
 
-        // Reset position
-        setPosition(0)
-      }
-    },
-    {
-      from: () => [position, 0],
-      filterTaps: true,
-      rubberband: 0.2,
-      axis: 'x',
-      bounds: { left: -MAX_DRAG, right: MAX_DRAG }
+  // Mouse handlers
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    // Only start swipe on the item content, not on drag handle
+    if ((e.target as HTMLElement).closest('[data-no-swipe]')) {
+      return
     }
-  )
+    handleStart(e.clientX)
+  }, [handleStart])
 
-  // Calculate opacity for backgrounds
-  const deleteOpacity = Math.min(1, Math.max(0, Math.abs(position) / SWIPE_THRESHOLD))
-  const completeOpacity = Math.min(1, Math.max(0, position / SWIPE_THRESHOLD))
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleMove(e.clientX)
+  }, [handleMove])
+
+  const handleMouseUp = useCallback(() => {
+    handleEnd()
+  }, [handleEnd])
 
   return (
-    <div className={cn('relative overflow-hidden rounded-xl', className)}>
+    <div
+      className={cn('relative overflow-hidden rounded-xl', className)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleEnd}
+    >
       {/* Delete background (swipe left) */}
       <div
-        className="absolute inset-0 bg-red-500 flex items-center justify-end pr-6 pointer-events-none transition-opacity duration-150"
-        style={{
-          opacity: position < 0 ? deleteOpacity : 0,
-          zIndex: 0
-        }}
+        className={cn(
+          'absolute inset-0 bg-red-500 flex items-center justify-end pr-6 pointer-events-none transition-all duration-200',
+          !showDelete && 'opacity-0'
+        )}
+        style={{ zIndex: 0 }}
       >
         <Trash2 className="h-6 w-6 text-white" />
       </div>
 
       {/* Complete background (swipe right) */}
       <div
-        className="absolute inset-0 bg-green-500 flex items-center justify-start pl-6 pointer-events-none transition-opacity duration-150"
-        style={{
-          opacity: position > 0 ? completeOpacity : 0,
-          zIndex: 0
-        }}
+        className={cn(
+          'absolute inset-0 bg-green-500 flex items-center justify-start pl-6 pointer-events-none transition-all duration-200',
+          !showComplete && 'opacity-0'
+        )}
+        style={{ zIndex: 0 }}
       >
         <Check className="h-6 w-6 text-white" />
       </div>
 
       {/* Content */}
       <div
-        ref={contentRef}
-        {...bind()}
         className="relative glass-card touch-none transition-transform duration-200 ease-out"
         style={{
-          transform: `translateX(${position}px)`,
+          transform: `translateX(${translateX}px)`,
           cursor: isDragging ? 'grabbing' : 'grab',
           zIndex: 1
         }}
