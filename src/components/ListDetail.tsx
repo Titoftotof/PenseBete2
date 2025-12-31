@@ -140,6 +140,7 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
         onDelete={onDelete}
         onComplete={onToggle}
         disabled={isDragging}
+        allowOverflow={true}
       >
         {itemContent}
       </SwipeableItem>

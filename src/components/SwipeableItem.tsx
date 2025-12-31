@@ -10,6 +10,7 @@ interface SwipeableItemProps {
   onComplete?: () => void
   disabled?: boolean
   className?: string
+  allowOverflow?: boolean
 }
 
 const SWIPE_THRESHOLD = 80
@@ -19,7 +20,8 @@ export function SwipeableItem({
   onDelete,
   onComplete,
   disabled = false,
-  className
+  className,
+  allowOverflow = false
 }: SwipeableItemProps) {
   const [translateX, setTranslateX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -127,7 +129,7 @@ export function SwipeableItem({
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-xl', className)}
+      className={cn('relative rounded-xl', !allowOverflow && 'overflow-hidden', className)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -139,7 +141,7 @@ export function SwipeableItem({
       {/* Delete background (swipe left) */}
       <div
         className={cn(
-          'absolute inset-0 bg-red-500 flex items-center justify-end pr-6 pointer-events-none transition-all duration-200',
+          'absolute inset-0 bg-red-500 flex items-center justify-end pr-6 pointer-events-none transition-all duration-200 rounded-xl overflow-hidden',
           !showDelete && 'opacity-0'
         )}
         style={{ zIndex: 0 }}
@@ -150,7 +152,7 @@ export function SwipeableItem({
       {/* Complete background (swipe right) */}
       <div
         className={cn(
-          'absolute inset-0 bg-green-500 flex items-center justify-start pl-6 pointer-events-none transition-all duration-200',
+          'absolute inset-0 bg-green-500 flex items-center justify-start pl-6 pointer-events-none transition-all duration-200 rounded-xl overflow-hidden',
           !showComplete && 'opacity-0'
         )}
         style={{ zIndex: 0 }}
