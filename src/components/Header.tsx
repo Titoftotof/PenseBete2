@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { LogOut, Sun, Moon, Monitor, ClipboardList, WifiOff, Sync } from 'lucide-react'
+import { LogOut, Sun, Moon, Monitor, ClipboardList, WifiOff, RotateCw } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useSyncStore } from '@/stores/syncStore'
@@ -56,7 +56,7 @@ export function Header() {
             )}
             {isOnline && pendingCount > 0 && (
               <div className="flex items-center gap-1 text-xs text-blue-500">
-                <Sync className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RotateCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{pendingCount} en attente</span>
               </div>
             )}
