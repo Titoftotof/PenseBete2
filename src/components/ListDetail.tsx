@@ -608,7 +608,15 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
         isOpen={reminderPickerItem !== null}
         onClose={() => setReminderPickerItem(null)}
         onConfirm={handleReminderConfirm}
-        initialDate={reminderPickerItem?.due_date ? new Date(reminderPickerItem.due_date) : undefined}
+        initialDate={
+          reminderPickerItem
+            ? (getReminderByItemId(reminderPickerItem.id)?.reminder_time
+                ? new Date(getReminderByItemId(reminderPickerItem.id)!.reminder_time)
+                : reminderPickerItem.due_date
+                  ? new Date(reminderPickerItem.due_date)
+                  : undefined)
+            : undefined
+        }
       />
     </div>
   )
