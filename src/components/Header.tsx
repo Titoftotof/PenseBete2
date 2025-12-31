@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { LogOut, Sun, Moon, Monitor, ClipboardList, WifiOff, RotateCw, Calendar, Bell, BellOff, X } from 'lucide-react'
+import { LogOut, Sun, Moon, Monitor, ClipboardList, WifiOff, RotateCw, Calendar, Bell, BellOff, X, AlertCircle } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useSyncStore } from '@/stores/syncStore'
@@ -17,7 +17,7 @@ export function Header() {
   const { theme, toggleTheme } = useTheme()
   const isOnline = useOnlineStatus()
   const { pendingOperations, isSyncing, setOnlineStatus } = useSyncStore()
-  const { isEnabled: notificationsEnabled, toggleNotifications, sendNotification } = useNotifications()
+  const { isEnabled: notificationsEnabled, toggleNotifications, sendNotification, errorMessage, clearError, status } = useNotifications()
   const { fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
   const { items } = useListStore()
   const location = useLocation()
@@ -194,6 +194,30 @@ export function Header() {
                     )}
                   </div>
                   <div className="p-3 border-t border-border bg-muted/30 space-y-2">
+                    {/* Error message */}
+                    {errorMessage && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs leading-relaxed">{errorMessage}</p>
+                          <button
+                            onClick={clearError}
+                            className="text-xs underline mt-1 opacity-70 hover:opacity-100"
+                          >
+                            Fermer
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {/* Safari iOS hint */}
+                    {status?.isSafariIOS && !status?.isPWA && !notificationsEnabled && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs leading-relaxed">
+                          Sur Safari iOS, ajoutez l'app à l'écran d'accueil pour recevoir les notifications.
+                        </p>
+                      </div>
+                    )}
                     {notificationsEnabled && (
                       <button
                         onClick={() => {
@@ -209,9 +233,9 @@ export function Header() {
                       </button>
                     )}
                     <button
-                      onClick={() => {
-                        toggleNotifications()
-                        if (notificationsEnabled) {
+                      onClick={async () => {
+                        const result = await toggleNotifications()
+                        if (result.success && notificationsEnabled) {
                           setShowRemindersMenu(false)
                         }
                       }}

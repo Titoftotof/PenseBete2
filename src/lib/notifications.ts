@@ -2,9 +2,65 @@ import { supabase } from './supabase'
 
 const NOTIFICATIONS_ENABLED_KEY = 'pensebete-notifications-enabled'
 
+export type NotificationStatus = {
+  supported: boolean
+  isPWA: boolean
+  isSafariIOS: boolean
+  permission: NotificationPermission
+  blocked: boolean
+  message: string
+}
+
 class NotificationService {
   private permission: NotificationPermission = 'default'
   private checkInterval: number | null = null
+
+  /**
+   * Check if we're running as a PWA (installed on home screen)
+   */
+  isPWA(): boolean {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           (window.navigator as any).standalone === true
+  }
+
+  /**
+   * Check if we're on Safari iOS
+   */
+  isSafariIOS(): boolean {
+    const ua = navigator.userAgent
+    const isIOS = /iPad|iPhone|iPod/.test(ua)
+    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|Chrome/.test(ua)
+    return isIOS && isSafari
+  }
+
+  /**
+   * Get current notification status with helpful message
+   */
+  getStatus(): NotificationStatus {
+    const supported = 'Notification' in window
+    const isPWA = this.isPWA()
+    const isSafariIOS = this.isSafariIOS()
+    const permission = supported ? Notification.permission : 'denied'
+    const blocked = permission === 'denied'
+
+    let message = ''
+
+    if (!supported) {
+      if (isSafariIOS && !isPWA) {
+        message = "Pour recevoir des notifications sur Safari iOS, ajoutez l'application à votre écran d'accueil puis ouvrez-la depuis là."
+      } else {
+        message = "Votre navigateur ne supporte pas les notifications."
+      }
+    } else if (blocked) {
+      message = "Les notifications sont bloquées. Réinitialisez les permissions dans les paramètres du site."
+    } else if (permission === 'granted') {
+      message = "Les notifications sont activées."
+    } else {
+      message = "Cliquez pour activer les notifications."
+    }
+
+    return { supported, isPWA, isSafariIOS, permission, blocked, message }
+  }
 
   async init() {
     if (!('Notification' in window)) {
@@ -18,35 +74,50 @@ class NotificationService {
       this.permission = 'granted'
     }
 
+    // Also sync with browser permission
+    if (Notification.permission === 'granted') {
+      this.permission = 'granted'
+    }
+
     // Start checking for reminders periodically
     this.startReminderCheck()
 
     return this.permission === 'granted'
   }
 
-  async requestPermission(): Promise<boolean> {
-    if (!('Notification' in window)) {
-      return false
+  async requestPermission(): Promise<{ granted: boolean; message: string }> {
+    const status = this.getStatus()
+
+    if (!status.supported) {
+      return { granted: false, message: status.message }
+    }
+
+    if (status.blocked) {
+      return { granted: false, message: status.message }
     }
 
     if (this.permission === 'granted') {
-      return true
+      return { granted: true, message: 'Notifications activées !' }
     }
 
-    if (this.permission !== 'denied') {
+    try {
       const result = await Notification.requestPermission()
       this.permission = result
 
       if (result === 'granted') {
         localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, 'granted')
-        return true
-      } else {
+        this.startReminderCheck()
+        return { granted: true, message: 'Notifications activées !' }
+      } else if (result === 'denied') {
         localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, result)
-        return false
+        return { granted: false, message: 'Les notifications ont été refusées. Vous pouvez les réactiver dans les paramètres du site.' }
+      } else {
+        return { granted: false, message: 'Demande de permission ignorée.' }
       }
+    } catch (error) {
+      console.error('Erreur lors de la demande de permission:', error)
+      return { granted: false, message: 'Erreur lors de la demande de permission.' }
     }
-
-    return false
   }
 
   isEnabled(): boolean {
