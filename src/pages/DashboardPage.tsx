@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, ShoppingCart, CheckSquare, Lightbulb, FileText, Trash2, FolderOpen, Menu, Share2 } from 'lucide-react'
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card'
+import { Plus, ShoppingCart, CheckSquare, Lightbulb, FileText, Trash2, FolderOpen, Share2, ArrowLeft, Menu } from 'lucide-react'
 import { useListStore } from '@/stores/listStore'
 import { useFolderStore } from '@/stores/folderStore'
 import { useShareStore } from '@/stores/shareStore'
@@ -11,13 +11,14 @@ import { Header } from '@/components/Header'
 import { FolderManager } from '@/components/FolderManager'
 import { SearchBar } from '@/components/SearchBar'
 import { ShareDialog } from '@/components/ShareDialog'
+import { BottomTabBar } from '@/components/BottomTabBar'
 import type { List, ListCategory } from '@/types'
 
-const categories: { id: ListCategory; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: 'shopping', label: 'Courses', icon: <ShoppingCart className="h-5 w-5" />, color: 'bg-green-500' },
-  { id: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-5 w-5" />, color: 'bg-blue-500' },
-  { id: 'ideas', label: 'Idées', icon: <Lightbulb className="h-5 w-5" />, color: 'bg-yellow-500' },
-  { id: 'notes', label: 'Notes', icon: <FileText className="h-5 w-5" />, color: 'bg-purple-500' },
+const categories: { id: ListCategory; label: string; icon: React.ReactNode; color: string; gradient: string }[] = [
+  { id: 'shopping', label: 'Courses', icon: <ShoppingCart className="h-6 w-6" />, color: 'bg-green-500', gradient: 'from-green-400 to-emerald-500' },
+  { id: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-6 w-6" />, color: 'bg-blue-500', gradient: 'from-blue-400 to-indigo-500' },
+  { id: 'ideas', label: 'Idées', icon: <Lightbulb className="h-6 w-6" />, color: 'bg-yellow-500', gradient: 'from-yellow-400 to-orange-500' },
+  { id: 'notes', label: 'Notes', icon: <FileText className="h-6 w-6" />, color: 'bg-purple-500', gradient: 'from-purple-400 to-pink-500' },
 ]
 
 export default function DashboardPage() {
@@ -68,6 +69,13 @@ export default function DashboardPage() {
     return baseLists.filter((list) => list.category === category).length
   }
 
+  const listCounts = useMemo(() => ({
+    shopping: getListCountByCategory('shopping'),
+    tasks: getListCountByCategory('tasks'),
+    ideas: getListCountByCategory('ideas'),
+    notes: getListCountByCategory('notes'),
+  }), [lists, selectedFolderId])
+
   const handleCategoryClick = (category: ListCategory) => {
     setSelectedCategory(category)
   }
@@ -102,11 +110,17 @@ export default function DashboardPage() {
   // If a list is selected, show the list detail view
   if (selectedList) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen pb-20 md:pb-0">
         <Header />
         <main className="container mx-auto px-4 py-6">
           <ListDetail list={selectedList} onBack={() => setSelectedList(null)} />
         </main>
+        <BottomTabBar
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategoryClick}
+          onCreateList={() => handleCreateList()}
+          listCounts={listCounts}
+        />
       </div>
     )
   }
@@ -116,20 +130,28 @@ export default function DashboardPage() {
     const categoryInfo = categories.find((c) => c.id === selectedCategory)!
 
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen pb-20 md:pb-0">
         <Header />
         <main className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => setSelectedCategory(null)}>
-                ← Retour
+              <Button
+                variant="glass"
+                size="icon"
+                className="rounded-xl"
+                onClick={() => setSelectedCategory(null)}
+              >
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className={`w-8 h-8 rounded-full ${categoryInfo.color} flex items-center justify-center text-white`}>
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-lg`}>
                 {categoryInfo.icon}
               </div>
               <h2 className="text-xl font-bold">{categoryInfo.label}</h2>
             </div>
-            <Button onClick={() => handleCreateList(selectedCategory)}>
+            <Button
+              onClick={() => handleCreateList(selectedCategory)}
+              className="hidden md:flex rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Nouvelle liste
             </Button>
@@ -143,14 +165,14 @@ export default function DashboardPage() {
           {filteredLists.length > 0 ? (
             <div className="grid gap-3">
               {filteredLists.map((list) => (
-                <Card
+                <GlassCard
                   key={list.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow group"
+                  className="cursor-pointer group"
                   onClick={() => handleListClick(list)}
                 >
-                  <CardContent className="flex items-center justify-between p-4">
+                  <GlassCardContent className="flex items-center justify-between p-4">
                     <div>
-                      <h3 className="font-medium">{list.name}</h3>
+                      <h3 className="font-semibold">{list.name}</h3>
                       <p className="text-sm text-muted-foreground">
                         {getFolderName(list.folder_id) && (
                           <span className="mr-2">
@@ -163,42 +185,52 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-1">
                       <Button
-                        variant="ghost"
+                        variant="glass"
                         size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
                         onClick={(e) => handleShareList(e, list)}
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="glass"
                         size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
                         onClick={(e) => handleDeleteList(e, list.id)}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </GlassCardContent>
+                </GlassCard>
               ))}
             </div>
           ) : (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
+            <GlassCard className="border-dashed border-2" hover={false}>
+              <GlassCardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground mb-4">
                   {searchQuery ? 'Aucun résultat' : 'Aucune liste dans cette catégorie'}
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => handleCreateList(selectedCategory)}>
+                  <Button
+                    onClick={() => handleCreateList(selectedCategory)}
+                    className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Créer une liste
                   </Button>
                 )}
-              </CardContent>
-            </Card>
+              </GlassCardContent>
+            </GlassCard>
           )}
         </main>
+
+        <BottomTabBar
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategoryClick}
+          onCreateList={() => handleCreateList()}
+          listCounts={listCounts}
+        />
 
         <CreateListDialog
           isOpen={showCreateDialog}
@@ -218,15 +250,15 @@ export default function DashboardPage() {
 
   // Default: show categories overview with sidebar
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Header />
 
       <div className="flex">
-        {/* Mobile sidebar toggle */}
+        {/* Desktop sidebar toggle */}
         <Button
-          variant="ghost"
+          variant="glass"
           size="icon"
-          className="fixed bottom-4 left-4 z-50 md:hidden shadow-lg bg-primary text-primary-foreground"
+          className="fixed bottom-20 left-4 z-50 md:hidden rounded-xl shadow-lg"
           onClick={() => setShowSidebar(!showSidebar)}
         >
           <Menu className="h-5 w-5" />
@@ -234,7 +266,7 @@ export default function DashboardPage() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-card border-r p-4 z-40 transition-transform md:translate-x-0 ${
+          className={`fixed md:sticky top-0 left-0 h-screen w-64 glass border-r border-white/20 p-4 z-40 transition-transform md:translate-x-0 ${
             showSidebar ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -252,7 +284,7 @@ export default function DashboardPage() {
         {/* Overlay for mobile */}
         {showSidebar && (
           <div
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
             onClick={() => setShowSidebar(false)}
           />
         )}
@@ -266,93 +298,101 @@ export default function DashboardPage() {
 
           {/* Current folder indicator */}
           {selectedFolderId && (
-            <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-              <FolderOpen className="h-4 w-4" />
-              <span>Dossier: {getFolderName(selectedFolderId)}</span>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedFolderId(null)}>
-                ✕
-              </Button>
-            </div>
+            <GlassCard className="mb-4 p-3" hover={false}>
+              <div className="flex items-center gap-2 text-sm">
+                <FolderOpen className="h-4 w-4 text-purple-500" />
+                <span className="font-medium">Dossier: {getFolderName(selectedFolderId)}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFolderId(null)}
+                  className="ml-auto h-6 w-6 p-0 rounded-full"
+                >
+                  ✕
+                </Button>
+              </div>
+            </GlassCard>
           )}
 
           {/* Categories grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {categories.map((category) => (
-              <Card
+              <GlassCard
                 key={category.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer overflow-hidden"
                 onClick={() => handleCategoryClick(category.id)}
               >
-                <CardHeader className="pb-2">
-                  <div className={`w-10 h-10 rounded-full ${category.color} flex items-center justify-center text-white mb-2`}>
+                <GlassCardHeader className="pb-2">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center text-white mb-3 shadow-lg`}>
                     {category.icon}
                   </div>
-                  <CardTitle className="text-lg">{category.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
+                  <GlassCardTitle className="text-lg">{category.label}</GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
                   <p className="text-sm text-muted-foreground">
                     {getListCountByCategory(category.id)} liste{getListCountByCategory(category.id) !== 1 ? 's' : ''}
                   </p>
-                </CardContent>
-              </Card>
+                </GlassCardContent>
+              </GlassCard>
             ))}
           </div>
 
           {/* Lists */}
           {filteredLists.length > 0 ? (
             <div>
-              <h2 className="text-lg font-semibold mb-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
                 {searchQuery ? `Résultats pour "${searchQuery}"` : 'Listes récentes'}
               </h2>
               <div className="grid gap-3">
                 {filteredLists.slice(0, searchQuery ? undefined : 10).map((list) => {
                   const categoryInfo = categories.find((c) => c.id === list.category)!
                   return (
-                    <Card
+                    <GlassCard
                       key={list.id}
-                      className="cursor-pointer hover:shadow-md transition-shadow group"
+                      className="cursor-pointer group"
                       onClick={() => handleListClick(list)}
                     >
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <div className={`w-8 h-8 rounded-full ${categoryInfo.color} flex items-center justify-center text-white`}>
-                          {categoryInfo.icon}
+                      <GlassCardContent className="flex items-center gap-3 p-4">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md`}>
+                          {React.cloneElement(categoryInfo.icon as React.ReactElement, { className: 'h-5 w-5' })}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{list.name}</h3>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{list.name}</h3>
+                          <p className="text-sm text-muted-foreground truncate">
                             {categoryInfo.label}
                             {getFolderName(list.folder_id) && ` • ${getFolderName(list.folder_id)}`}
                           </p>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 shrink-0">
                           <Button
-                            variant="ghost"
+                            variant="glass"
                             size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
                             onClick={(e) => handleShareList(e, list)}
                           >
                             <Share2 className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="glass"
                             size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
                             onClick={(e) => handleDeleteList(e, list.id)}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </GlassCardContent>
+                    </GlassCard>
                   )
                 })}
               </div>
             </div>
           ) : (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Plus className="h-6 w-6 text-muted-foreground" />
+            <GlassCard className="border-dashed border-2" hover={false}>
+              <GlassCardContent className="flex flex-col items-center justify-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-4">
+                  <Plus className="h-8 w-8 text-purple-500" />
                 </div>
                 <h3 className="font-semibold mb-2">
                   {searchQuery ? 'Aucun résultat' : 'Aucune liste pour le moment'}
@@ -362,23 +402,33 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted-foreground text-center mb-4">
                       Créez votre première liste pour commencer à organiser vos idées
                     </p>
-                    <Button onClick={() => handleCreateList()}>
+                    <Button
+                      onClick={() => handleCreateList()}
+                      className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Créer une liste
                     </Button>
                   </>
                 )}
-              </CardContent>
-            </Card>
+              </GlassCardContent>
+            </GlassCard>
           )}
 
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
             </div>
           )}
         </main>
       </div>
+
+      <BottomTabBar
+        selectedCategory={selectedCategory}
+        onCategorySelect={handleCategoryClick}
+        onCreateList={() => handleCreateList()}
+        listCounts={listCounts}
+      />
 
       <CreateListDialog
         isOpen={showCreateDialog}

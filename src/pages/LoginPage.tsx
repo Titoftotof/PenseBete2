@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card'
+import { ClipboardList } from 'lucide-react'
 
 type AuthMode = 'login' | 'signup'
 
@@ -20,21 +21,18 @@ export default function LoginPage() {
     setMessage(null)
 
     if (mode === 'signup') {
-      // Vérifier que les mots de passe correspondent
       if (password !== confirmPassword) {
         setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas' })
         setLoading(false)
         return
       }
 
-      // Vérifier la longueur du mot de passe
       if (password.length < 6) {
         setMessage({ type: 'error', text: 'Le mot de passe doit contenir au moins 6 caractères' })
         setLoading(false)
         return
       }
 
-      // Inscription
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -46,7 +44,6 @@ export default function LoginPage() {
         setMessage({ type: 'success', text: 'Compte créé ! Vérifiez votre email pour confirmer.' })
       }
     } else {
-      // Connexion
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -67,17 +64,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Pense-Bête</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <GlassCard className="w-full max-w-md" hover={false}>
+        <GlassCardHeader className="text-center space-y-4">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+            <ClipboardList className="h-8 w-8 text-white" />
+          </div>
+          <GlassCardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Pense-Bête
+          </GlassCardTitle>
+          <p className="text-sm text-muted-foreground">
             {mode === 'login'
               ? 'Connectez-vous pour accéder à vos listes'
               : 'Créez un compte pour commencer'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </GlassCardHeader>
+        <GlassCardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
@@ -87,6 +89,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                className="glass-input h-12 rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -98,6 +101,7 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 minLength={6}
+                className="glass-input h-12 rounded-xl"
               />
             </div>
             {mode === 'signup' && (
@@ -110,10 +114,15 @@ export default function LoginPage() {
                   required
                   disabled={loading}
                   minLength={6}
+                  className="glass-input h-12 rounded-xl"
                 />
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+              disabled={loading}
+            >
               {loading
                 ? 'Chargement...'
                 : mode === 'login'
@@ -123,13 +132,15 @@ export default function LoginPage() {
           </form>
 
           {message && (
-            <p
-              className={`mt-4 text-sm text-center ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
+            <div
+              className={`mt-4 p-3 rounded-xl text-sm text-center ${
+                message.type === 'success'
+                  ? 'bg-green-500/20 text-green-700 dark:text-green-300'
+                  : 'bg-red-500/20 text-red-700 dark:text-red-300'
               }`}
             >
               {message.text}
-            </p>
+            </div>
           )}
 
           <div className="mt-6 text-center text-sm">
@@ -139,14 +150,14 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={toggleMode}
-              className="text-primary hover:underline font-medium"
+              className="text-purple-600 dark:text-purple-400 hover:underline font-semibold"
               disabled={loading}
             >
               {mode === 'login' ? "S'inscrire" : "Se connecter"}
             </button>
           </div>
-        </CardContent>
-      </Card>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   )
 }

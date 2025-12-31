@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
 import { Folder, Plus, Trash2, Edit2, X, Check } from 'lucide-react'
 import { useFolderStore } from '@/stores/folderStore'
 import { useListStore } from '@/stores/listStore'
@@ -70,14 +70,15 @@ export function FolderManager({ onSelectFolder, selectedFolderId }: FolderManage
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Folder className="h-4 w-4" />
+        <h3 className="font-semibold flex items-center gap-2 text-sm">
+          <Folder className="h-4 w-4 text-purple-500" />
           Dossiers
         </h3>
         <Button
-          variant="ghost"
+          variant="glass"
           size="sm"
           onClick={() => setShowCreate(!showCreate)}
+          className="rounded-xl"
         >
           {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </Button>
@@ -85,101 +86,101 @@ export function FolderManager({ onSelectFolder, selectedFolderId }: FolderManage
 
       {/* Create folder form */}
       {showCreate && (
-        <Card>
-          <CardContent className="p-3 space-y-3">
+        <GlassCard className="border-dashed border-2" hover={false}>
+          <GlassCardContent className="p-4 space-y-3">
             <Input
               placeholder="Nom du dossier"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+              className="glass-input rounded-xl h-10"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {FOLDER_COLORS.map((color) => (
                 <button
                   key={color}
                   onClick={() => setNewFolderColor(color)}
-                  className={`w-6 h-6 rounded-full transition-transform ${
-                    newFolderColor === color ? 'scale-125 ring-2 ring-offset-2 ring-primary' : ''
+                  className={`w-8 h-8 rounded-full transition-transform hover:scale-110 ${
+                    newFolderColor === color ? 'scale-125 ring-2 ring-offset-2 ring-purple-500' : ''
                   }`}
                   style={{ backgroundColor: color }}
                 />
               ))}
             </div>
             <Button
-              size="sm"
-              className="w-full"
+              className="w-full h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               onClick={handleCreateFolder}
               disabled={loading || !newFolderName.trim()}
             >
-              Créer
+              Créer le dossier
             </Button>
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       )}
 
       {/* All lists button */}
       <button
         onClick={() => onSelectFolder(null)}
-        className={`w-full text-left p-3 rounded-lg transition-colors ${
+        className={`w-full text-left p-3 rounded-xl transition-all duration-200 ${
           selectedFolderId === null
-            ? 'bg-primary text-primary-foreground'
-            : 'hover:bg-accent'
+            ? 'glass bg-purple-500/20 border-purple-500/30 text-purple-600 dark:text-purple-400'
+            : 'glass hover:bg-white/40 dark:hover:bg-slate-800/40'
         }`}
       >
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-current opacity-50" />
-          <span className="flex-1">Toutes les listes</span>
-          <span className="text-sm opacity-70">{lists.length}</span>
+          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
+          <span className="flex-1 font-medium">Toutes les listes</span>
+          <span className="text-sm bg-primary/20 px-2 py-0.5 rounded-full">{lists.length}</span>
         </div>
       </button>
 
       {/* Folders list */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         {folders.map((folder) => (
           <div
             key={folder.id}
-            className={`group flex items-center gap-2 p-3 rounded-lg transition-colors cursor-pointer ${
+            className={`group flex items-center gap-2 p-3 rounded-xl transition-all duration-200 cursor-pointer ${
               selectedFolderId === folder.id
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-accent'
+                ? 'glass bg-purple-500/20 border-purple-500/30'
+                : 'glass hover:bg-white/40 dark:hover:bg-slate-800/40'
             }`}
             onClick={() => onSelectFolder(folder.id)}
           >
             <div
-              className="w-3 h-3 rounded-full"
+              className="w-3 h-3 rounded-full shadow-sm"
               style={{ backgroundColor: folder.color }}
             />
 
             {editingId === folder.id ? (
-              <div className="flex-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-                  className="h-7 text-sm"
+                  className="h-8 text-sm rounded-lg glass-input"
                   autoFocus
                 />
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveEdit}>
-                  <Check className="h-3 w-3" />
+                <Button size="icon" variant="glass" className="h-8 w-8 rounded-lg" onClick={handleSaveEdit}>
+                  <Check className="h-3 w-3 text-green-500" />
                 </Button>
               </div>
             ) : (
               <>
-                <span className="flex-1 truncate">{folder.name}</span>
-                <span className="text-sm opacity-70">{getListCountInFolder(folder.id)}</span>
+                <span className="flex-1 font-medium truncate">{folder.name}</span>
+                <span className="text-sm bg-primary/20 px-2 py-0.5 rounded-full">{getListCountInFolder(folder.id)}</span>
                 <div className="opacity-0 group-hover:opacity-100 flex gap-1" onClick={(e) => e.stopPropagation()}>
                   <Button
                     size="icon"
-                    variant="ghost"
-                    className="h-6 w-6"
+                    variant="glass"
+                    className="h-7 w-7 rounded-lg"
                     onClick={() => handleStartEdit(folder)}
                   >
                     <Edit2 className="h-3 w-3" />
                   </Button>
                   <Button
                     size="icon"
-                    variant="ghost"
-                    className="h-6 w-6"
+                    variant="glass"
+                    className="h-7 w-7 rounded-lg text-red-500"
                     onClick={() => handleDeleteFolder(folder.id)}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -192,9 +193,14 @@ export function FolderManager({ onSelectFolder, selectedFolderId }: FolderManage
       </div>
 
       {folders.length === 0 && !showCreate && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Aucun dossier. Créez-en un pour organiser vos listes.
-        </p>
+        <GlassCard className="border-dashed border-2" hover={false}>
+          <GlassCardContent className="flex flex-col items-center justify-center py-6">
+            <Folder className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground text-center">
+              Aucun dossier. Créez-en un pour organiser vos listes.
+            </p>
+          </GlassCardContent>
+        </GlassCard>
       )}
     </div>
   )

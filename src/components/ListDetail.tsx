@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
 import { ArrowLeft, Plus, Trash2, Check, GripVertical, Flag, Calendar } from 'lucide-react'
 import { useListStore } from '@/stores/listStore'
 import type { List, ListItem, Priority } from '@/types'
@@ -67,8 +67,8 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
   const isOverdue = item.due_date && new Date(item.due_date) < new Date() && !item.is_completed
 
   return (
-    <Card ref={setNodeRef} style={style} className={`group ${isOverdue ? 'border-red-500' : ''}`}>
-      <CardContent className="flex items-center gap-3 p-3">
+    <GlassCard ref={setNodeRef} style={style} className={`group ${isOverdue ? 'border-red-500/50 bg-red-500/10' : ''}`} hover={false}>
+      <GlassCardContent className="flex items-center gap-3 p-3">
         <button
           {...attributes}
           {...listeners}
@@ -78,20 +78,20 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
         </button>
         <button
           onClick={onToggle}
-          className={`h-5 w-5 rounded border flex items-center justify-center transition-colors ${
+          className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
             item.is_completed
               ? 'border-primary bg-primary'
-              : 'border-border hover:border-primary'
+              : 'border-border hover:border-primary hover:bg-primary/10'
           }`}
         >
-          {item.is_completed && <Check className="h-3 w-3 text-primary-foreground" />}
+          {item.is_completed && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
         </button>
         <div className="flex-1 min-w-0">
           <span className={`block truncate ${item.is_completed ? 'line-through opacity-60' : ''}`}>
             {item.content}
           </span>
           {item.due_date && (
-            <span className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
+            <span className={`text-xs flex items-center gap-1 mt-0.5 ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
               <Calendar className="h-3 w-3" />
               {new Date(item.due_date).toLocaleDateString('fr-FR')}
             </span>
@@ -102,13 +102,13 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
         <div className="relative">
           <button
             onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-            className={`p-1 rounded hover:bg-accent ${priorityConfig.color}`}
+            className={`p-2 rounded-xl hover:bg-accent transition-colors ${priorityConfig.color}`}
             title={`Priorité: ${priorityConfig.label}`}
           >
-            <Flag className="h-4 w-4" />
+            <Flag className="h-4 w-4" fill={priority !== 'low' ? 'currentColor' : 'none'} />
           </button>
           {showPriorityMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+            <div className="absolute right-0 top-full mt-1 glass border border-white/20 rounded-xl shadow-lg z-10 py-1 min-w-[140px] overflow-hidden">
               {PRIORITIES.map((p) => (
                 <button
                   key={p}
@@ -116,11 +116,11 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
                     onUpdatePriority(p)
                     setShowPriorityMenu(false)
                   }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center gap-2 transition-colors ${
                     p === priority ? 'bg-accent' : ''
                   }`}
                 >
-                  <Flag className={`h-3 w-3 ${PRIORITY_CONFIG[p].color}`} />
+                  <Flag className={`h-3.5 w-3.5 ${PRIORITY_CONFIG[p].color}`} fill={p !== 'low' ? 'currentColor' : 'none'} />
                   {PRIORITY_CONFIG[p].label}
                 </button>
               ))}
@@ -129,15 +129,15 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
         </div>
 
         <Button
-          variant="ghost"
+          variant="glass"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
           onClick={onDelete}
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <Trash2 className="h-4 w-4" />
         </Button>
-      </CardContent>
-    </Card>
+      </GlassCardContent>
+    </GlassCard>
   )
 }
 
@@ -200,7 +200,7 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="glass" size="icon" onClick={onBack} className="rounded-xl">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h2 className="text-xl font-bold">{list.name}</h2>
@@ -213,17 +213,22 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
           value={newItemContent}
           onChange={(e) => setNewItemContent(e.target.value)}
           disabled={loading}
+          className="glass-input rounded-xl h-12"
         />
-        <Button type="submit" disabled={loading || !newItemContent.trim()}>
-          <Plus className="h-4 w-4" />
+        <Button
+          type="submit"
+          disabled={loading || !newItemContent.trim()}
+          className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+        >
+          <Plus className="h-5 w-5" />
         </Button>
       </form>
 
       {/* Priority legend */}
-      <div className="flex gap-4 text-xs text-muted-foreground">
+      <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
         {PRIORITIES.map((p) => (
-          <span key={p} className="flex items-center gap-1">
-            <Flag className={`h-3 w-3 ${PRIORITY_CONFIG[p].color}`} />
+          <span key={p} className="flex items-center gap-1 px-2 py-1 rounded-lg glass">
+            <Flag className={`h-3 w-3 ${PRIORITY_CONFIG[p].color}`} fill={p !== 'low' ? 'currentColor' : 'none'} />
             {PRIORITY_CONFIG[p].label}
           </span>
         ))}
@@ -253,40 +258,46 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
       {/* Completed items */}
       {completedItems.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Check className="h-4 w-4 text-green-500" />
             Complétés ({completedItems.length})
           </h3>
           {completedItems.map((item) => (
-            <Card key={item.id} className="group opacity-60">
-              <CardContent className="flex items-center gap-3 p-3">
+            <GlassCard key={item.id} className="group opacity-60" hover={false}>
+              <GlassCardContent className="flex items-center gap-3 p-3">
                 <GripVertical className="h-4 w-4 text-muted-foreground opacity-0" />
                 <button
                   onClick={() => toggleItemComplete(item.id)}
-                  className="h-5 w-5 rounded border border-primary bg-primary flex items-center justify-center"
+                  className="h-6 w-6 rounded-lg border-2 border-primary bg-primary flex items-center justify-center"
                 >
-                  <Check className="h-3 w-3 text-primary-foreground" />
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </button>
                 <span className="flex-1 line-through">{item.content}</span>
                 <Button
-                  variant="ghost"
+                  variant="glass"
                   size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
                   onClick={() => deleteItem(item.id)}
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              </CardContent>
-            </Card>
+              </GlassCardContent>
+            </GlassCard>
           ))}
         </div>
       )}
 
       {/* Empty state */}
       {items.length === 0 && !loading && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>Aucun élément dans cette liste</p>
-          <p className="text-sm">Ajoutez votre premier élément ci-dessus</p>
-        </div>
+        <GlassCard className="border-dashed border-2" hover={false}>
+          <GlassCardContent className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-4">
+              <Plus className="h-8 w-8 text-purple-500" />
+            </div>
+            <p className="text-muted-foreground">Aucun élément dans cette liste</p>
+            <p className="text-sm text-muted-foreground mt-1">Ajoutez votre premier élément ci-dessus</p>
+          </GlassCardContent>
+        </GlassCard>
       )}
     </div>
   )
