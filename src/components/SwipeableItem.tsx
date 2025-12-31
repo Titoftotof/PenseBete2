@@ -1,4 +1,5 @@
-import { ReactNode, useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { useDrag } from '@use-gesture/react'
 import { Trash2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,7 +24,6 @@ export function SwipeableItem({
 }: SwipeableItemProps) {
   const [position, setPosition] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const [showAction, setShowAction] = useState<'delete' | 'complete' | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const handleDelete = useCallback(() => {
@@ -39,7 +39,7 @@ export function SwipeableItem({
   }, [onComplete])
 
   const bind = useDrag(
-    ({ offset: [x], movement: [mx], down, first, cancel }) => {
+    ({ offset: [x], movement: [mx], down, cancel }) => {
       if (disabled) {
         cancel()
         return
@@ -51,15 +51,6 @@ export function SwipeableItem({
       const clampedX = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, x))
       setPosition(clampedX)
 
-      // Show action preview
-      if (clampedX < -SWIPE_THRESHOLD / 2) {
-        setShowAction('delete')
-      } else if (clampedX > SWIPE_THRESHOLD / 2) {
-        setShowAction('complete')
-      } else {
-        setShowAction(null)
-      }
-
       // Trigger action on release
       if (!down) {
         if (mx < -SWIPE_THRESHOLD) {
@@ -70,7 +61,6 @@ export function SwipeableItem({
 
         // Reset position
         setPosition(0)
-        setShowAction(null)
       }
     },
     {

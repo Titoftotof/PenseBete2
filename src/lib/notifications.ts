@@ -75,9 +75,8 @@ class NotificationService {
         icon: '/icon.svg',
         badge: '/icon.svg',
         tag: data?.itemId || 'default',
-        renotify: true,
         data
-      })
+      } as NotificationOptions)
     }
   }
 
@@ -133,7 +132,7 @@ class NotificationService {
         this.sendNotification(
           `Échéance dépassée: ${reminder.itemName}`,
           `L'élément "${reminder.itemName}" de la liste "${reminder.listName}" est en retard !`,
-          { itemId: reminder.itemId, listId: reminder.listListId }
+          { itemId: reminder.itemId, listId: reminder.listId }
         )
 
         notified.push(`${reminder.id}-overdue`)
