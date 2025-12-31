@@ -17,7 +17,7 @@ export function Header() {
   const { theme, toggleTheme } = useTheme()
   const isOnline = useOnlineStatus()
   const { pendingOperations, isSyncing, setOnlineStatus } = useSyncStore()
-  const { isEnabled: notificationsEnabled, toggleNotifications } = useNotifications()
+  const { isEnabled: notificationsEnabled, toggleNotifications, sendNotification } = useNotifications()
   const { fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
   const { items } = useListStore()
   const location = useLocation()
@@ -193,7 +193,21 @@ export function Header() {
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t border-border bg-muted/30">
+                  <div className="p-3 border-t border-border bg-muted/30 space-y-2">
+                    {notificationsEnabled && (
+                      <button
+                        onClick={() => {
+                          sendNotification(
+                            '🔔 Test de notification',
+                            'Les notifications fonctionnent correctement !',
+                            { test: true }
+                          )
+                        }}
+                        className="text-sm w-full text-center py-2.5 px-4 rounded-lg font-medium transition-colors bg-purple-500/15 text-purple-500 hover:bg-purple-500/25"
+                      >
+                        Tester les notifications
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         toggleNotifications()
