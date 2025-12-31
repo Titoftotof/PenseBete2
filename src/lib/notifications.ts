@@ -1,5 +1,3 @@
-import { supabase } from './supabase'
-
 export interface Reminder {
   id: string
   itemId: string

@@ -355,7 +355,7 @@ export default function DashboardPage() {
                     >
                       <GlassCardContent className="flex items-center gap-3 p-4">
                         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md`}>
-                          {React.cloneElement(categoryInfo.icon as React.ReactElement, { className: 'h-5 w-5' })}
+                          {categoryInfo.icon}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold truncate">{list.name}</h3>
