@@ -149,6 +149,7 @@ function SortableItem({ item, onToggle, onDelete, onUpdatePriority }: SortableIt
 
 export function ListDetail({ list, onBack }: ListDetailProps) {
   const [newItemContent, setNewItemContent] = useState('')
+  const [showCompleted, setShowCompleted] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const { items, fetchItems, createItem, toggleItemComplete, deleteItem, updateItem, reorderItems, archiveItem, unarchiveItem, loading } = useListStore()
 
@@ -266,44 +267,52 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
       {/* Completed items */}
       {completedItems.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="text-sm font-medium text-muted-foreground flex items-center gap-2 hover:text-foreground transition-colors w-full"
+          >
             <Check className="h-4 w-4 text-green-500" />
             Complétés ({completedItems.length})
-          </h3>
-          {completedItems.map((item) => (
-            <GlassCard key={item.id} className="opacity-70" hover={false}>
-              <GlassCardContent className="flex items-center gap-3 p-3">
-                <button
-                  onClick={() => toggleItemComplete(item.id)}
-                  className="h-6 w-6 rounded-lg border-2 border-green-500 bg-green-500 flex items-center justify-center shrink-0"
-                  data-no-swipe="true"
-                >
-                  <Check className="h-3.5 w-3.5 text-white" />
-                </button>
-                <span className="flex-1 line-through text-muted-foreground min-w-0 truncate">{item.content}</span>
-                <div className="flex gap-1 shrink-0" data-no-swipe="true">
-                  <Button
-                    variant="glass"
-                    size="icon"
-                    className="rounded-xl text-blue-500 h-8 w-8"
-                    onClick={() => archiveItem(item.id)}
-                    title="Archiver"
-                  >
-                    <Archive className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="glass"
-                    size="icon"
-                    className="rounded-xl text-red-500 h-8 w-8"
-                    onClick={() => deleteItem(item.id)}
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </GlassCardContent>
-            </GlassCard>
-          ))}
+            <span className={`transition-transform ml-auto ${showCompleted ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+          {showCompleted && (
+            <div className="space-y-2">
+              {completedItems.map((item) => (
+                <GlassCard key={item.id} className="opacity-70" hover={false}>
+                  <GlassCardContent className="flex items-center gap-3 p-3">
+                    <button
+                      onClick={() => toggleItemComplete(item.id)}
+                      className="h-6 w-6 rounded-lg border-2 border-green-500 bg-green-500 flex items-center justify-center shrink-0"
+                      data-no-swipe="true"
+                    >
+                      <Check className="h-3.5 w-3.5 text-white" />
+                    </button>
+                    <span className="flex-1 line-through text-muted-foreground min-w-0 truncate">{item.content}</span>
+                    <div className="flex gap-1 shrink-0" data-no-swipe="true">
+                      <Button
+                        variant="glass"
+                        size="icon"
+                        className="rounded-xl text-blue-500 h-8 w-8"
+                        onClick={() => archiveItem(item.id)}
+                        title="Archiver"
+                      >
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="glass"
+                        size="icon"
+                        className="rounded-xl text-red-500 h-8 w-8"
+                        onClick={() => deleteItem(item.id)}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </GlassCardContent>
+                </GlassCard>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
