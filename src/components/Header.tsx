@@ -133,74 +133,85 @@ export function Header() {
             )}
             {/* Reminders dropdown menu */}
             {showRemindersMenu && (
-              <div className="absolute right-0 top-full mt-2 w-72 glass border border-white/20 rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="p-3 border-b border-white/10">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm">Rappels à venir</h3>
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowRemindersMenu(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-80 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-border bg-purple-500/10">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-base flex items-center gap-2">
+                        <Bell className="h-4 w-4 text-purple-500" />
+                        Rappels à venir
+                      </h3>
+                      <button
+                        onClick={() => setShowRemindersMenu(false)}
+                        className="p-1.5 rounded-lg hover:bg-accent transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {upcomingReminders.length === 0 ? (
+                      <div className="p-6 text-center text-sm text-muted-foreground">
+                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                        Aucun rappel programmé
+                      </div>
+                    ) : (
+                      upcomingReminders.map((reminder) => (
+                        <div
+                          key={reminder.id}
+                          className={`p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors ${
+                            isOverdue(reminder.reminder_time) ? 'bg-red-500/10' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {getItemContent(reminder.item_id)}
+                              </p>
+                              <p className={`text-xs mt-1 flex items-center gap-1 ${
+                                isOverdue(reminder.reminder_time) ? 'text-red-500 font-medium' : 'text-purple-500'
+                              }`}>
+                                <Bell className="h-3 w-3" />
+                                {formatReminderDateTime(reminder.reminder_time)}
+                                {isOverdue(reminder.reminder_time) && ' (en retard)'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => deleteReminder(reminder.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-500 transition-colors"
+                              title="Supprimer le rappel"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-3 border-t border-border bg-muted/30">
                     <button
-                      onClick={() => setShowRemindersMenu(false)}
-                      className="p-1 rounded-lg hover:bg-accent transition-colors"
+                      onClick={() => {
+                        toggleNotifications()
+                        if (notificationsEnabled) {
+                          setShowRemindersMenu(false)
+                        }
+                      }}
+                      className={`text-sm w-full text-center py-2.5 px-4 rounded-lg font-medium transition-colors ${
+                        notificationsEnabled
+                          ? 'bg-red-500/15 text-red-500 hover:bg-red-500/25'
+                          : 'bg-green-500/15 text-green-500 hover:bg-green-500/25'
+                      }`}
                     >
-                      <X className="h-4 w-4" />
+                      {notificationsEnabled ? 'Désactiver les notifications' : 'Activer les notifications'}
                     </button>
                   </div>
                 </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {upcomingReminders.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      Aucun rappel programmé
-                    </div>
-                  ) : (
-                    upcomingReminders.map((reminder) => (
-                      <div
-                        key={reminder.id}
-                        className={`p-3 border-b border-white/10 last:border-b-0 ${
-                          isOverdue(reminder.reminder_time) ? 'bg-red-500/10' : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {getItemContent(reminder.item_id)}
-                            </p>
-                            <p className={`text-xs mt-0.5 ${
-                              isOverdue(reminder.reminder_time) ? 'text-red-500' : 'text-purple-500'
-                            }`}>
-                              <Bell className="h-3 w-3 inline mr-1" />
-                              {formatReminderDateTime(reminder.reminder_time)}
-                              {isOverdue(reminder.reminder_time) && ' (en retard)'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => deleteReminder(reminder.id)}
-                            className="p-1 rounded-lg hover:bg-red-500/20 text-red-500 transition-colors"
-                            title="Supprimer le rappel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="p-3 border-t border-white/10">
-                  <button
-                    onClick={() => {
-                      toggleNotifications()
-                      if (notificationsEnabled) {
-                        setShowRemindersMenu(false)
-                      }
-                    }}
-                    className={`text-xs w-full text-center py-2 px-3 rounded-lg transition-colors ${
-                      notificationsEnabled
-                        ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                        : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                    }`}
-                  >
-                    {notificationsEnabled ? 'Désactiver les notifications' : 'Activer les notifications'}
-                  </button>
-                </div>
-              </div>
+              </>
             )}
           </div>
           <Button
