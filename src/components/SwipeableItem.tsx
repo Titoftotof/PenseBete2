@@ -149,7 +149,7 @@ export function SwipeableItem({
 
       {/* Content */}
       <div
-        className="relative glass-card touch-none transition-transform duration-200 ease-out"
+        className="relative touch-none transition-transform duration-200 ease-out"
         style={{
           transform: `translateX(${translateX}px)`,
           cursor: isDragging ? 'grabbing' : 'grab',
