@@ -12,6 +12,7 @@ import { FolderManager } from '@/components/FolderManager'
 import { SearchBar } from '@/components/SearchBar'
 import { ShareDialog } from '@/components/ShareDialog'
 import { BottomTabBar } from '@/components/BottomTabBar'
+import { SwipeableItem } from '@/components/SwipeableItem'
 import type { List, ListCategory } from '@/types'
 
 const categories: { id: ListCategory; label: string; icon: React.ReactNode; color: string; gradient: string }[] = [
@@ -117,8 +118,14 @@ export default function DashboardPage() {
         </main>
         <BottomTabBar
           selectedCategory={selectedCategory}
-          onCategorySelect={handleCategoryClick}
-          onCreateList={() => handleCreateList()}
+          onCategorySelect={(cat) => {
+            setSelectedList(null)
+            handleCategoryClick(cat)
+          }}
+          onCreateList={() => {
+            setSelectedList(null)
+            handleCreateList()
+          }}
           listCounts={listCounts}
         />
       </div>
@@ -165,44 +172,53 @@ export default function DashboardPage() {
           {filteredLists.length > 0 ? (
             <div className="grid gap-3">
               {filteredLists.map((list) => (
-                <GlassCard
+                <SwipeableItem
                   key={list.id}
-                  className="cursor-pointer group"
-                  onClick={() => handleListClick(list)}
+                  onDelete={() => {
+                    if (confirm('Supprimer cette liste ?')) {
+                      deleteList(list.id)
+                    }
+                  }}
                 >
-                  <GlassCardContent className="flex items-center justify-between p-4">
-                    <div>
-                      <h3 className="font-semibold">{list.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {getFolderName(list.folder_id) && (
-                          <span className="mr-2">
-                            <FolderOpen className="h-3 w-3 inline mr-1" />
-                            {getFolderName(list.folder_id)}
-                          </span>
-                        )}
-                        Créée le {new Date(list.created_at).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="glass"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
-                        onClick={(e) => handleShareList(e, list)}
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="glass"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
-                        onClick={(e) => handleDeleteList(e, list.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </GlassCardContent>
-                </GlassCard>
+                  <GlassCard
+                    className="cursor-pointer group"
+                    onClick={() => handleListClick(list)}
+                    hover={false}
+                  >
+                    <GlassCardContent className="flex items-center justify-between p-4">
+                      <div>
+                        <h3 className="font-semibold">{list.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {getFolderName(list.folder_id) && (
+                            <span className="mr-2">
+                              <FolderOpen className="h-3 w-3 inline mr-1" />
+                              {getFolderName(list.folder_id)}
+                            </span>
+                          )}
+                          Créée le {new Date(list.created_at).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                      <div className="flex gap-1" data-no-swipe="true">
+                        <Button
+                          variant="glass"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
+                          onClick={(e) => handleShareList(e, list)}
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="glass"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
+                          onClick={(e) => handleDeleteList(e, list.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </GlassCardContent>
+                  </GlassCard>
+                </SwipeableItem>
               ))}
             </div>
           ) : (
@@ -348,42 +364,51 @@ export default function DashboardPage() {
                 {filteredLists.slice(0, searchQuery ? undefined : 10).map((list) => {
                   const categoryInfo = categories.find((c) => c.id === list.category)!
                   return (
-                    <GlassCard
+                    <SwipeableItem
                       key={list.id}
-                      className="cursor-pointer group"
-                      onClick={() => handleListClick(list)}
+                      onDelete={() => {
+                        if (confirm('Supprimer cette liste ?')) {
+                          deleteList(list.id)
+                        }
+                      }}
                     >
-                      <GlassCardContent className="flex items-center gap-3 p-4">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md`}>
-                          {categoryInfo.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">{list.name}</h3>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {categoryInfo.label}
-                            {getFolderName(list.folder_id) && ` • ${getFolderName(list.folder_id)}`}
-                          </p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button
-                            variant="glass"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
-                            onClick={(e) => handleShareList(e, list)}
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="glass"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
-                            onClick={(e) => handleDeleteList(e, list.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </GlassCardContent>
-                    </GlassCard>
+                      <GlassCard
+                        className="cursor-pointer group"
+                        onClick={() => handleListClick(list)}
+                        hover={false}
+                      >
+                        <GlassCardContent className="flex items-center gap-3 p-4">
+                          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md`}>
+                            {categoryInfo.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold truncate">{list.name}</h3>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {categoryInfo.label}
+                              {getFolderName(list.folder_id) && ` • ${getFolderName(list.folder_id)}`}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 shrink-0" data-no-swipe="true">
+                            <Button
+                              variant="glass"
+                              size="icon"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
+                              onClick={(e) => handleShareList(e, list)}
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="glass"
+                              size="icon"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-red-500"
+                              onClick={(e) => handleDeleteList(e, list.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </GlassCardContent>
+                      </GlassCard>
+                    </SwipeableItem>
                   )
                 })}
               </div>
