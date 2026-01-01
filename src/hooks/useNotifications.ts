@@ -88,8 +88,8 @@ export function useNotifications() {
     }
   }
 
-  const sendNotification = (title: string, body: string, data?: any) => {
-    notificationService.sendNotification(title, body, data)
+  const sendNotification = (title: string, body: string) => {
+    notificationService.sendNotification(title, body)
   }
 
   const clearError = () => {

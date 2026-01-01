@@ -37,11 +37,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((title: string, body: string, type: Toast['type'] = 'info') => {
     const id = `${Date.now()}-${Math.random()}`
     setToasts((prev) => [...prev, { id, title, body, type }])
-
-    // Auto-dismiss after 8 seconds
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 8000)
+    // No auto-dismiss - user must close manually
   }, [])
 
   // Register global toast function

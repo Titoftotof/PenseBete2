@@ -141,7 +141,7 @@ class NotificationService {
     }
   }
 
-  sendNotification(title: string, body: string, data?: any) {
+  sendNotification(title: string, body: string) {
     console.log('[Notifications] sendNotification called:', { title, body, isEnabled: this.isEnabled() })
 
     if (!this.isEnabled()) {
@@ -155,7 +155,7 @@ class NotificationService {
       return
     }
 
-    // Always show in-app toast as a reliable fallback
+    // Show in-app toast notification (no system notification to avoid duplicates)
     showGlobalToast(title, body, 'reminder')
     console.log('[Notifications] Toast shown')
 
@@ -168,37 +168,6 @@ class NotificationService {
       })
     } catch {
       // Ignore audio errors
-    }
-
-    // Also try system notification (may not work in all contexts)
-    try {
-      const notification = new Notification(title, {
-        body,
-        icon: '/icon.svg',
-        badge: '/icon.svg',
-        tag: data?.itemId || 'default',
-        requireInteraction: true,
-        silent: false
-      })
-
-      console.log('[Notifications] System notification created')
-
-      notification.onshow = () => {
-        console.log('[Notifications] System notification shown')
-      }
-
-      notification.onerror = (e) => {
-        console.error('[Notifications] System notification error:', e)
-      }
-
-      notification.onclick = () => {
-        console.log('[Notifications] System notification clicked')
-        window.focus()
-        notification.close()
-      }
-    } catch (error) {
-      console.error('[Notifications] System notification failed:', error)
-      // Toast is already shown above, no need for additional fallback
     }
   }
 
@@ -314,8 +283,7 @@ class NotificationService {
 
         this.sendNotification(
           `🔔 ${itemName}`,
-          message,
-          { itemId: reminder.item_id }
+          message
         )
 
         // Mark as notified locally
@@ -368,6 +336,6 @@ export function requestNotificationPermission() {
   return notificationService.requestPermission()
 }
 
-export function sendNotification(title: string, body: string, data?: any) {
-  return notificationService.sendNotification(title, body, data)
+export function sendNotification(title: string, body: string) {
+  return notificationService.sendNotification(title, body)
 }
