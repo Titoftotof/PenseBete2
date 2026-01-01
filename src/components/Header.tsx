@@ -17,7 +17,7 @@ export function Header() {
   const { theme, toggleTheme } = useTheme()
   const isOnline = useOnlineStatus()
   const { pendingOperations, isSyncing, setOnlineStatus } = useSyncStore()
-  const { isEnabled: notificationsEnabled, toggleNotifications, sendNotification, errorMessage, clearError, status } = useNotifications()
+  const { isEnabled: notificationsEnabled, toggleNotifications, errorMessage, clearError, status } = useNotifications()
   const { fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
   const { items } = useListStore()
   const location = useLocation()
