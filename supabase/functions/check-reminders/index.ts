@@ -168,8 +168,8 @@ Deno.serve(async (req: Request) => {
             auth: sub.auth
           },
           {
-            title: `🔔 ${itemContent}`,
-            body: `Rappel: "${itemContent}" - c'est maintenant !`,
+            title: `Pense-Bête`,
+            body: `N'oubliez pas de faire : ${itemContent}`,
             data: { reminderId: reminder.id }
           },
           vapidDetails
