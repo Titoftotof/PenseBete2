@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { showGlobalToast } from '@/components/ui/toast'
 
 const NOTIFICATIONS_ENABLED_KEY = 'pensebete-notifications-enabled'
 
@@ -154,47 +155,50 @@ class NotificationService {
       return
     }
 
+    // Always show in-app toast as a reliable fallback
+    showGlobalToast(title, body, 'reminder')
+    console.log('[Notifications] Toast shown')
+
+    // Also play a sound
     try {
-      // Always use regular Notification API directly
+      const audio = new Audio('/notification.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {
+        // Ignore audio errors (file might not exist)
+      })
+    } catch {
+      // Ignore audio errors
+    }
+
+    // Also try system notification (may not work in all contexts)
+    try {
       const notification = new Notification(title, {
         body,
         icon: '/icon.svg',
         badge: '/icon.svg',
         tag: data?.itemId || 'default',
-        requireInteraction: true, // Keep notification visible until user interacts
-        silent: false // Make sure it's not silent
+        requireInteraction: true,
+        silent: false
       })
 
-      console.log('[Notifications] Notification created successfully', notification)
-
-      // Also play a sound as backup
-      try {
-        const audio = new Audio('/notification.mp3')
-        audio.volume = 0.5
-        audio.play().catch(() => {
-          // Ignore audio errors (file might not exist)
-        })
-      } catch {
-        // Ignore audio errors
-      }
+      console.log('[Notifications] System notification created')
 
       notification.onshow = () => {
-        console.log('[Notifications] Notification shown')
+        console.log('[Notifications] System notification shown')
       }
 
       notification.onerror = (e) => {
-        console.error('[Notifications] Notification error:', e)
+        console.error('[Notifications] System notification error:', e)
       }
 
       notification.onclick = () => {
-        console.log('[Notifications] Notification clicked')
+        console.log('[Notifications] System notification clicked')
         window.focus()
         notification.close()
       }
     } catch (error) {
-      console.error('[Notifications] Error creating notification:', error)
-      // Fallback: show an alert if notification fails
-      alert(`${title}\n\n${body}`)
+      console.error('[Notifications] System notification failed:', error)
+      // Toast is already shown above, no need for additional fallback
     }
   }
 
@@ -281,7 +285,6 @@ class NotificationService {
     for (const reminder of reminders as any[]) {
       const reminderId = reminder.id
       const itemName = reminder.list_items?.content || 'Élément'
-      const listName = reminder.list_items?.lists?.name || 'Liste'
 
       // Check if already notified
       if (notified.includes(reminderId)) {

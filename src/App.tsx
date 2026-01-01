@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CalendarPage from '@/pages/CalendarPage'
+import { ToastProvider } from '@/components/ui/toast'
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -36,22 +37,24 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={session ? <Navigate to="/" replace /> : <LoginPage />}
-        />
-        <Route
-          path="/"
-          element={session ? <DashboardPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/calendar"
-          element={session ? <CalendarPage /> : <Navigate to="/login" replace />}
-        />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={session ? <Navigate to="/" replace /> : <LoginPage />}
+          />
+          <Route
+            path="/"
+            element={session ? <DashboardPage /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/calendar"
+            element={session ? <CalendarPage /> : <Navigate to="/login" replace />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
 
