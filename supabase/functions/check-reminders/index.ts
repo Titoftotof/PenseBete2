@@ -3,18 +3,7 @@
 // Called every minute by cron-job.org
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import webpush from 'https://esm.sh/web-push@3.6.6'
-
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
-const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:contact@pensebete.app'
-
-// Configure web-push
-webpush.setVapidDetails(
-  VAPID_SUBJECT,
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-)
+import webpush from 'npm:web-push@3.6.6'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,10 +13,18 @@ const corsHeaders = {
 // Send a push notification
 async function sendPushNotification(
   subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; data?: Record<string, unknown> }
+  payload: { title: string; body: string; data?: Record<string, unknown> },
+  vapidDetails: { subject: string; publicKey: string; privateKey: string }
 ): Promise<boolean> {
   try {
     console.log('Sending push to:', subscription.endpoint)
+
+    // Set VAPID details for this request
+    webpush.setVapidDetails(
+      vapidDetails.subject,
+      vapidDetails.publicKey,
+      vapidDetails.privateKey
+    )
 
     const pushSubscription = {
       endpoint: subscription.endpoint,
@@ -44,19 +41,19 @@ async function sendPushNotification(
 
     console.log('Push sent successfully')
     return true
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending push:', error)
-    
+
     // If subscription is invalid (410 Gone), we should return false so the caller knows
     if (error.statusCode === 410 || error.statusCode === 404) {
       console.log('Subscription expired or invalid')
     }
-    
+
     return false
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -65,11 +62,37 @@ Deno.serve(async (req) => {
   try {
     console.log('check-reminders function called')
 
-    // Create Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    // Get environment variables
+    const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')
+    const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')
+    const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:contact@pensebete.app'
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    // Check if required variables are present
+    const missingVars = []
+    if (!VAPID_PUBLIC_KEY) missingVars.push('VAPID_PUBLIC_KEY')
+    if (!VAPID_PRIVATE_KEY) missingVars.push('VAPID_PRIVATE_KEY')
+    if (!supabaseUrl) missingVars.push('SUPABASE_URL')
+    if (!supabaseServiceKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY')
+
+    if (missingVars.length > 0) {
+      const errorMsg = `Missing environment variables: ${missingVars.join(', ')}`
+      console.error(errorMsg)
+      return new Response(JSON.stringify({ error: errorMsg }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const vapidDetails = {
+      subject: VAPID_SUBJECT,
+      publicKey: VAPID_PUBLIC_KEY!,
+      privateKey: VAPID_PRIVATE_KEY!
+    }
+
+    // Create Supabase client with service role
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
     // Get current time and window
     const now = new Date()
@@ -148,7 +171,8 @@ Deno.serve(async (req) => {
             title: `🔔 ${itemContent}`,
             body: `Rappel: "${itemContent}" - c'est maintenant !`,
             data: { reminderId: reminder.id }
-          }
+          },
+          vapidDetails
         )
 
         if (success) {
@@ -177,9 +201,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in check-reminders:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
