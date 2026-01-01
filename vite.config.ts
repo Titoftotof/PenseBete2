@@ -14,7 +14,7 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icon.svg'],
       manifest: {
         name: 'Pense-Bête',
-        short_name: 'PenseBête',
+        short_name: 'Pense-Bête',
         description: 'Application de pense-bête pour gérer vos listes',
         theme_color: '#3b82f6',
         background_color: '#ffffff',

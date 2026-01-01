@@ -1,11 +1,11 @@
 // Service Worker Push Notification Handler
 // This file will be imported by the main service worker
 
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   console.log('[SW] Push notification received:', event)
 
   let data = {
-    title: '🔔 Rappel PenseBête',
+    title: '🔔 Rappel Pense-Bête',
     body: 'Vous avez un rappel !',
     icon: '/icon.svg',
     badge: '/icon.svg'
@@ -49,7 +49,7 @@ self.addEventListener('push', function(event) {
 })
 
 // Handle notification click
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   console.log('[SW] Notification clicked:', event)
 
   event.notification.close()
@@ -57,7 +57,7 @@ self.addEventListener('notificationclick', function(event) {
   // Focus or open the app
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(function(clientList) {
+      .then(function (clientList) {
         // Try to focus an existing window
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
