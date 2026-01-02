@@ -1,6 +1,37 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns'
 import type { Reminder } from '@/types'
+
+// Helper to calculate next future occurrence for recurring reminders
+function getNextFutureOccurrence(
+  reminderTime: Date,
+  recurrenceType: 'daily' | 'weekly' | 'monthly' | 'yearly',
+  recurrenceInterval: number
+): Date {
+  const now = new Date()
+  let nextTime = reminderTime
+
+  // Keep adding intervals until we're in the future
+  while (nextTime <= now) {
+    switch (recurrenceType) {
+      case 'daily':
+        nextTime = addDays(nextTime, recurrenceInterval)
+        break
+      case 'weekly':
+        nextTime = addWeeks(nextTime, recurrenceInterval)
+        break
+      case 'monthly':
+        nextTime = addMonths(nextTime, recurrenceInterval)
+        break
+      case 'yearly':
+        nextTime = addYears(nextTime, recurrenceInterval)
+        break
+    }
+  }
+
+  return nextTime
+}
 
 interface ReminderStore {
   reminders: Reminder[]
@@ -79,8 +110,23 @@ export const useReminderStore = create<ReminderStore>((set, get) => ({
   updateReminder: async (reminderId: string, reminderTime: Date, recurrence) => {
     set({ loading: true, error: null })
 
+    let finalReminderTime = reminderTime
+
+    // If adding/updating recurrence and the time is in the past, calculate next future occurrence
+    if (recurrence?.type && recurrence.type !== 'none') {
+      const now = new Date()
+      if (reminderTime <= now) {
+        finalReminderTime = getNextFutureOccurrence(
+          reminderTime,
+          recurrence.type as 'daily' | 'weekly' | 'monthly' | 'yearly',
+          recurrence.interval || 1
+        )
+        console.log('[Reminder] Time was in the past, calculated next occurrence:', finalReminderTime.toISOString())
+      }
+    }
+
     const updates: any = {
-      reminder_time: reminderTime.toISOString(),
+      reminder_time: finalReminderTime.toISOString(),
       is_sent: false,
       sent_at: null
     }
