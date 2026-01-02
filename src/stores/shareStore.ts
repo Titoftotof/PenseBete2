@@ -10,6 +10,11 @@ export interface SharedList {
   shared_with_user_id?: string
   permission: SharePermission
   created_at: string
+  list?: {
+    name: string
+    category: string
+    folder_id?: string
+  }
 }
 
 interface ShareStore {
@@ -121,7 +126,7 @@ export const useShareStore = create<ShareStore>((set) => ({
 
     const { data, error } = await supabase
       .from('shared_lists')
-      .select('*')
+      .select('*, list:lists(name, category, folder_id)')
       .eq('shared_with_email', user.email.toLowerCase())
       .order('created_at', { ascending: false })
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card'
-import { Plus, ShoppingCart, CheckSquare, Lightbulb, FileText, Trash2, FolderOpen, Share2, ArrowLeft, Menu } from 'lucide-react'
+import { Plus, ShoppingCart, CheckSquare, Lightbulb, FileText, Trash2, FolderOpen, Share2, ArrowLeft, Menu, Users } from 'lucide-react'
 import { useListStore } from '@/stores/listStore'
 import { useFolderStore } from '@/stores/folderStore'
 import { useShareStore } from '@/stores/shareStore'
@@ -34,7 +34,7 @@ export default function DashboardPage() {
 
   const { lists, fetchLists, deleteList, reorderLists, loading } = useListStore()
   const { folders } = useFolderStore()
-  const { fetchSharedWithMe } = useShareStore()
+  const { fetchSharedWithMe, sharedWithMe } = useShareStore()
 
   useEffect(() => {
     fetchLists()
@@ -286,9 +286,8 @@ export default function DashboardPage() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky top-0 left-0 h-screen w-64 glass border-r border-white/20 p-4 z-40 transition-transform md:translate-x-0 ${
-            showSidebar ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          className={`fixed md:sticky top-0 left-0 h-screen w-64 glass border-r border-white/20 p-4 z-40 transition-transform md:translate-x-0 ${showSidebar ? 'translate-x-0' : '-translate-x-full'
+            }`}
         >
           <div className="pt-16 md:pt-4">
             <FolderManager
@@ -356,6 +355,59 @@ export default function DashboardPage() {
               </GlassCard>
             ))}
           </div>
+
+          {/* Shared lists */}
+          {sharedWithMe.length > 0 && !selectedFolderId && !searchQuery && (
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+                Partagé avec moi
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sharedWithMe.map((share) => {
+                  if (!share.list) return null
+                  const categoryInfo = categories.find((c) => c.id === share.list!.category) || categories[0]
+
+                  return (
+                    <GlassCard
+                      key={share.id}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        // Construct a List object from the share info
+                        const list: List = {
+                          id: share.list_id,
+                          name: share.list!.name,
+                          category: share.list!.category as ListCategory,
+                          folder_id: share.list!.folder_id,
+                          user_id: '', // Not needed for display
+                          position: 0,
+                          created_at: share.created_at,
+                          updated_at: share.created_at
+                        }
+                        handleListClick(list)
+                      }}
+                      hover={false}
+                    >
+                      <GlassCardContent className="flex items-center gap-3 p-4">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
+                          <Users className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{share.list!.name}</h3>
+                          <p className="text-sm text-muted-foreground truncate">
+                            Partagé par {share.shared_with_email === '...' ? 'un utilisateur' : 'un utilisateur'}
+                          </p>
+                        </div>
+                        <div className="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 text-xs font-medium">
+                          {share.permission === 'write' ? 'Édition' : 'Lecture'}
+                        </div>
+                      </GlassCardContent>
+                    </GlassCard>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Lists */}
           {filteredLists.length > 0 ? (
