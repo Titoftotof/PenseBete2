@@ -509,14 +509,14 @@ export default function DashboardPage() {
             </div>
           )}
         </main>
-      </div>
 
-      <BottomTabBar
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategoryClick}
-        onCreateList={() => handleCreateList()}
-        listCounts={listCounts}
-      />
+        <BottomTabBar
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategoryClick}
+          onCreateList={() => handleCreateList()}
+          listCounts={listCounts}
+        />
+      </div>
 
       <CreateListDialog
         isOpen={showCreateDialog}
