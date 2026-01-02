@@ -101,11 +101,10 @@ function SortableItem({ item, reminder, onToggle, onDelete, onUpdatePriority, on
         <button
           onClick={onToggle}
           data-no-swipe="true"
-          className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
-            item.is_completed
-              ? 'border-primary bg-primary'
-              : 'border-border hover:border-primary hover:bg-primary/10'
-          }`}
+          className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${item.is_completed
+            ? 'border-primary bg-primary'
+            : 'border-border hover:border-primary hover:bg-primary/10'
+            }`}
         >
           {item.is_completed && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
         </button>
@@ -139,9 +138,8 @@ function SortableItem({ item, reminder, onToggle, onDelete, onUpdatePriority, on
                     onUpdatePriority(p)
                     setShowPriorityMenu(false)
                   }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center gap-2 transition-colors ${
-                    p === priority ? 'bg-accent' : ''
-                  }`}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center gap-2 transition-colors ${p === priority ? 'bg-accent' : ''
+                    }`}
                 >
                   <Flag className={`h-3.5 w-3.5 ${PRIORITY_CONFIG[p].color}`} fill={p !== 'low' ? 'currentColor' : 'none'} />
                   {PRIORITY_CONFIG[p].label}
@@ -198,7 +196,7 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   const [reminderPickerItem, setReminderPickerItem] = useState<ListItem | null>(null)
   const { items, fetchItems, createItem, toggleItemComplete, deleteItem, updateItem, reorderItems, archiveItem, unarchiveItem, loading } = useListStore()
   const { trackItem } = useFrequentItemsStore()
-  const { createReminder, getReminderByItemId, deleteReminder, fetchReminders } = useReminderStore()
+  const { createReminder, getReminderByItemId, deleteReminder, updateReminder, fetchReminders } = useReminderStore()
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -286,11 +284,12 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
 
     const existingReminder = getReminderByItemId(reminderPickerItem.id)
     if (existingReminder) {
-      // Update existing reminder - for now we'll delete and recreate
-      await deleteReminder(existingReminder.id)
+      // Update existing reminder
+      await updateReminder(existingReminder.id, date)
+    } else {
+      // Create new reminder
+      await createReminder(reminderPickerItem.id, date)
     }
-
-    await createReminder(reminderPickerItem.id, date)
     // Also update the item's due_date for backward compatibility
     await updateItem(reminderPickerItem.id, { due_date: date.toISOString() })
     setReminderPickerItem(null)
@@ -581,13 +580,12 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
                       <span className="flex-1">{item.content}</span>
                       {item.priority !== 'normal' && (
                         <Flag
-                          className={`h-4 w-4 ${
-                            item.priority === 'urgent'
-                              ? 'text-red-500'
-                              : item.priority === 'high'
-                                ? 'text-orange-500'
-                                : 'text-gray-400'
-                          }`}
+                          className={`h-4 w-4 ${item.priority === 'urgent'
+                            ? 'text-red-500'
+                            : item.priority === 'high'
+                              ? 'text-orange-500'
+                              : 'text-gray-400'
+                            }`}
                           fill="currentColor"
                         />
                       )}
@@ -624,10 +622,10 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
         initialDate={
           reminderPickerItem
             ? (getReminderByItemId(reminderPickerItem.id)?.reminder_time
-                ? new Date(getReminderByItemId(reminderPickerItem.id)!.reminder_time)
-                : reminderPickerItem.due_date
-                  ? new Date(reminderPickerItem.due_date)
-                  : undefined)
+              ? new Date(getReminderByItemId(reminderPickerItem.id)!.reminder_time)
+              : reminderPickerItem.due_date
+                ? new Date(reminderPickerItem.due_date)
+                : undefined)
             : undefined
         }
       />
