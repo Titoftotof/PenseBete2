@@ -87,7 +87,7 @@ function SortableItem({ item, reminder, onToggle, onDelete, onUpdatePriority, on
   }
 
   const itemContent = (
-    <GlassCard className={`group ${isOverdue ? 'border-red-500/50 bg-red-500/10' : ''}`} hover={false} style={style}>
+    <GlassCard className={`group overflow-visible ${isOverdue ? 'border-red-500/50 bg-red-500/10' : ''}`} hover={false} style={style}>
       <GlassCardContent className="flex items-center gap-3 p-3">
         <button
           {...attributes}
@@ -129,7 +129,7 @@ function SortableItem({ item, reminder, onToggle, onDelete, onUpdatePriority, on
             <Flag className="h-4 w-4" fill={priority !== 'low' ? 'currentColor' : 'none'} />
           </button>
           {showPriorityMenu && (
-            <div className="absolute right-0 top-full mt-1 glass border border-white/20 rounded-xl shadow-lg z-10 py-1 min-w-[140px] overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 glass border border-white/20 rounded-xl shadow-lg z-50 py-1 min-w-[140px] overflow-hidden">
               {PRIORITIES.map((p) => (
                 <button
                   key={p}
@@ -173,7 +173,7 @@ function SortableItem({ item, reminder, onToggle, onDelete, onUpdatePriority, on
   )
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className={showPriorityMenu ? 'relative z-50' : ''}>
       <SwipeableItem
         onDelete={onDelete}
         onComplete={onToggle}

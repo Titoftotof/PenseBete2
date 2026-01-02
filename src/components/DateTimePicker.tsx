@@ -108,7 +108,7 @@ export function DateTimePicker({ isOpen, onClose, onConfirm, onDelete, initialDa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 pb-24 pb-safe md:pb-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4 pb-24 pb-safe md:pb-4">
       <GlassCard className="max-w-md w-full max-h-[90vh] overflow-y-auto">
         <GlassCardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
