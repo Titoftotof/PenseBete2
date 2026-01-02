@@ -14,6 +14,8 @@ interface SwipeableItemProps {
 }
 
 const SWIPE_THRESHOLD = 80
+const SWIPE_ACTIVATION_THRESHOLD = 10 // Minimum horizontal movement to activate swipe
+const SCROLL_LOCK_RATIO = 1.5 // Horizontal movement must be 1.5x vertical to activate swipe
 
 export function SwipeableItem({
   children,
@@ -29,37 +31,51 @@ export function SwipeableItem({
   const [showComplete, setShowComplete] = useState(false)
 
   const startX = useRef(0)
+  const startY = useRef(0)
   const currentX = useRef(0)
   const isSwipeActive = useRef(false)
+  const isScrolling = useRef(false)
+  const directionDetermined = useRef(false)
 
-  const handleStart = useCallback((clientX: number) => {
+  const handleStart = useCallback((clientX: number, clientY: number) => {
     if (disabled) return
     startX.current = clientX
+    startY.current = clientY
     currentX.current = clientX
     setIsDragging(true)
-    isSwipeActive.current = false // Don't activate swipe immediately
+    isSwipeActive.current = false
+    isScrolling.current = false
+    directionDetermined.current = false
   }, [disabled])
 
-  const handleMove = useCallback((clientX: number) => {
+  const handleMove = useCallback((clientX: number, clientY: number) => {
     if (!isDragging || disabled) return
 
-    const diff = clientX - startX.current
+    const diffX = clientX - startX.current
+    const diffY = clientY - startY.current
     currentX.current = clientX
 
-    // Only activate swipe if movement is significant (> 20px)
-    if (Math.abs(diff) > 20 && !isSwipeActive.current) {
-      isSwipeActive.current = true
+    // Determine direction on first significant movement
+    if (!directionDetermined.current && (Math.abs(diffX) > SWIPE_ACTIVATION_THRESHOLD || Math.abs(diffY) > SWIPE_ACTIVATION_THRESHOLD)) {
+      directionDetermined.current = true
+      // If horizontal movement is significantly greater than vertical, it's a swipe
+      if (Math.abs(diffX) > Math.abs(diffY) * SCROLL_LOCK_RATIO) {
+        isSwipeActive.current = true
+      } else {
+        // It's a scroll, don't interfere
+        isScrolling.current = true
+      }
     }
 
-    // Only update UI if swipe is active
-    if (isSwipeActive.current) {
-      setTranslateX(diff)
+    // Only update UI if swipe is active (not scrolling)
+    if (isSwipeActive.current && !isScrolling.current) {
+      setTranslateX(diffX)
 
       // Show backgrounds based on direction
-      if (diff < -20) {
+      if (diffX < -20) {
         setShowDelete(true)
         setShowComplete(false)
-      } else if (diff > 20) {
+      } else if (diffX > 20) {
         setShowComplete(true)
         setShowDelete(false)
       } else {
@@ -89,6 +105,8 @@ export function SwipeableItem({
     setShowComplete(false)
     setIsDragging(false)
     isSwipeActive.current = false
+    isScrolling.current = false
+    directionDetermined.current = false
   }, [isDragging, disabled, onDelete, onComplete])
 
   // Touch handlers
@@ -98,12 +116,17 @@ export function SwipeableItem({
       return
     }
     const touch = e.touches[0]
-    handleStart(touch.clientX)
+    handleStart(touch.clientX, touch.clientY)
   }, [handleStart])
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     const touch = e.touches[0]
-    handleMove(touch.clientX)
+    handleMove(touch.clientX, touch.clientY)
+
+    // Prevent default only if we're swiping (not scrolling)
+    if (isSwipeActive.current && !isScrolling.current) {
+      e.preventDefault()
+    }
   }, [handleMove])
 
   const handleTouchEnd = useCallback(() => {
@@ -116,11 +139,11 @@ export function SwipeableItem({
     if ((e.target as HTMLElement).closest('[data-no-swipe]')) {
       return
     }
-    handleStart(e.clientX)
+    handleStart(e.clientX, e.clientY)
   }, [handleStart])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    handleMove(e.clientX)
+    handleMove(e.clientX, e.clientY)
   }, [handleMove])
 
   const handleMouseUp = useCallback(() => {
@@ -162,10 +185,9 @@ export function SwipeableItem({
 
       {/* Content */}
       <div
-        className="relative touch-none transition-transform duration-200 ease-out"
+        className="relative transition-transform duration-200 ease-out"
         style={{
           transform: `translateX(${translateX}px)`,
-          cursor: isDragging ? 'grabbing' : 'grab',
           zIndex: 1
         }}
       >

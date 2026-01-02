@@ -20,6 +20,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -218,6 +219,7 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   const [groupedByCategory, setGroupedByCategory] = useState(false)
   const [parsedVoiceItems, setParsedVoiceItems] = useState<Array<{ content: string; priority: Priority }> | null>(null)
   const [reminderPickerItem, setReminderPickerItem] = useState<ListItem | null>(null)
+  const [listName, setListName] = useState(list.name)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const { items, fetchItems, createItem, toggleItemComplete, deleteItem, updateItem, reorderItems, archiveItem, unarchiveItem, loading } = useListStore()
   const { trackItem } = useFrequentItemsStore()
@@ -242,7 +244,13 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 10,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -254,6 +262,11 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
     fetchItems(list.id)
     fetchReminders()
   }, [list.id, fetchItems, fetchReminders])
+
+  // Sync local state when list prop changes (e.g., navigating to a different list)
+  useEffect(() => {
+    setListName(list.name)
+  }, [list.id, list.name])
 
   useEffect(() => {
     if (titleRef.current) {
@@ -399,33 +412,36 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Button variant="glass" size="icon" onClick={onBack} className="rounded-xl shrink-0">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="glass"
-            size="icon"
-            onClick={() => setGroupedByCategory(!groupedByCategory)}
-            className={`rounded-xl transition-colors ${groupedByCategory ? 'bg-purple-500/20 text-purple-500' : ''}`}
-            title={groupedByCategory ? 'Vue liste' : 'Vue par catégorie'}
-          >
-            {groupedByCategory ? <ListIcon className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
-          </Button>
-        </div>
+      <div className="flex items-start gap-1">
+        <Button variant="glass" size="icon" onClick={onBack} className="rounded-xl shrink-0 h-8 w-8 mt-0.5">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <textarea
           ref={titleRef}
-          value={list.name}
-          onChange={(e) => useListStore.getState().updateList(list.id, { name: e.target.value })}
+          value={listName}
+          onChange={(e) => setListName(e.target.value)}
+          onBlur={() => {
+            if (listName.trim() && listName !== list.name) {
+              useListStore.getState().updateList(list.id, { name: listName.trim() })
+            }
+          }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = 'auto';
             target.style.height = `${target.scrollHeight}px`;
           }}
           rows={1}
-          className="text-2xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-lg px-2 py-1 w-full resize-none overflow-hidden text-center"
+          className="flex-1 text-xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-lg px-1 py-1 resize-none overflow-hidden text-left"
         />
+        <Button
+          variant="glass"
+          size="icon"
+          onClick={() => setGroupedByCategory(!groupedByCategory)}
+          className={`rounded-xl shrink-0 h-8 w-8 mt-0.5 transition-colors ${groupedByCategory ? 'bg-purple-500/20 text-purple-500' : ''}`}
+          title={groupedByCategory ? 'Vue liste' : 'Vue par catégorie'}
+        >
+          {groupedByCategory ? <ListIcon className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Add item form */}
