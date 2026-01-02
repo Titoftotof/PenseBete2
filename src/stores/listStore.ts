@@ -20,6 +20,7 @@ interface ListStore {
 
   // Items
   fetchItems: (listId: string) => Promise<void>
+  fetchAllItems: () => Promise<void>
   createItem: (listId: string, content: string) => Promise<ListItem | null>
   updateItem: (id: string, updates: Partial<Pick<ListItem, 'content' | 'is_completed' | 'is_archived' | 'position' | 'priority' | 'due_date' | 'grocery_category'>>) => Promise<void>
   deleteItem: (id: string) => Promise<void>
@@ -168,6 +169,21 @@ export const useListStore = create<ListStore>((set, get) => ({
       .from('list_items')
       .select('*')
       .eq('list_id', listId)
+      .order('position', { ascending: true })
+
+    if (error) {
+      set({ error: error.message, loading: false })
+    } else {
+      set({ items: data || [], loading: false })
+    }
+  },
+
+  // Fetch all items (for calendar and reminders)
+  fetchAllItems: async () => {
+    set({ loading: true, error: null })
+    const { data, error } = await supabase
+      .from('list_items')
+      .select('*')
       .order('position', { ascending: true })
 
     if (error) {

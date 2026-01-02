@@ -12,13 +12,14 @@ import type { ListItem } from '@/types'
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const { items, toggleItemComplete } = useListStore()
+  const { items, toggleItemComplete, fetchAllItems } = useListStore()
   const { fetchReminders } = useReminderStore()
 
-  // Fetch reminders on mount
+  // Fetch reminders and items on mount
   useEffect(() => {
     fetchReminders()
-  }, [fetchReminders])
+    fetchAllItems()
+  }, [fetchReminders, fetchAllItems])
 
   // Get all items with due dates
   const itemsWithDueDates = useMemo(() => {
@@ -121,11 +122,10 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => toggleItemComplete(item.id)}
-                          className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                            item.is_completed
+                          className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${item.is_completed
                               ? 'border-green-500 bg-green-500'
                               : 'border-border hover:border-green-500'
-                          }`}
+                            }`}
                         >
                           {item.is_completed && <CheckCircle className="h-3.5 w-3.5 text-white" />}
                         </button>

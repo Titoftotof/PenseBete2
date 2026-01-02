@@ -19,13 +19,14 @@ export function Header() {
   const { pendingOperations, isSyncing, setOnlineStatus } = useSyncStore()
   const { isEnabled: notificationsEnabled, toggleNotifications, errorMessage, clearError, status } = useNotifications()
   const { fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
-  const { items } = useListStore()
+  const { items, fetchAllItems } = useListStore()
   const location = useLocation()
 
-  // Fetch reminders on mount
+  // Fetch reminders and items on mount
   useEffect(() => {
     fetchReminders()
-  }, [fetchReminders])
+    fetchAllItems()
+  }, [fetchReminders, fetchAllItems])
 
   // Get upcoming reminders (not sent)
   const upcomingReminders = getUpcomingReminders()
@@ -164,18 +165,16 @@ export function Header() {
                       upcomingReminders.map((reminder) => (
                         <div
                           key={reminder.id}
-                          className={`p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors ${
-                            isOverdue(reminder.reminder_time) ? 'bg-red-500/10' : ''
-                          }`}
+                          className={`p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors ${isOverdue(reminder.reminder_time) ? 'bg-red-500/10' : ''
+                            }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
                                 {getItemContent(reminder.item_id)}
                               </p>
-                              <p className={`text-xs mt-1 flex items-center gap-1 ${
-                                isOverdue(reminder.reminder_time) ? 'text-red-500 font-medium' : 'text-purple-500'
-                              }`}>
+                              <p className={`text-xs mt-1 flex items-center gap-1 ${isOverdue(reminder.reminder_time) ? 'text-red-500 font-medium' : 'text-purple-500'
+                                }`}>
                                 <Bell className="h-3 w-3" />
                                 {formatReminderDateTime(reminder.reminder_time)}
                                 {isOverdue(reminder.reminder_time) && ' (en retard)'}
@@ -245,11 +244,10 @@ export function Header() {
                           setShowRemindersMenu(false)
                         }
                       }}
-                      className={`text-sm w-full text-center py-2.5 px-4 rounded-lg font-medium transition-colors ${
-                        notificationsEnabled
+                      className={`text-sm w-full text-center py-2.5 px-4 rounded-lg font-medium transition-colors ${notificationsEnabled
                           ? 'bg-red-500/15 text-red-500 hover:bg-red-500/25'
                           : 'bg-green-500/15 text-green-500 hover:bg-green-500/25'
-                      }`}
+                        }`}
                     >
                       {notificationsEnabled ? 'Désactiver les notifications' : 'Activer les notifications'}
                     </button>
