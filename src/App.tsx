@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CalendarPage from '@/pages/CalendarPage'
+import ProfilePage from '@/pages/ProfilePage'
 import { ToastProvider } from '@/components/ui/toast'
 import { SettingsModal } from '@/components/SettingsModal'
 
@@ -39,8 +40,8 @@ function App() {
 
   return (
     <ToastProvider>
-      <SettingsModal />
       <BrowserRouter>
+        <SettingsModal />
         <Routes>
           <Route
             path="/login"
@@ -53,6 +54,10 @@ function App() {
           <Route
             path="/calendar"
             element={session ? <CalendarPage /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/profile"
+            element={session ? <ProfilePage /> : <Navigate to="/login" replace />}
           />
         </Routes>
       </BrowserRouter>

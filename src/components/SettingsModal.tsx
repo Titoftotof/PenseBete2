@@ -1,17 +1,24 @@
-import { X, Settings, Calendar, Bell, Sun, Moon, Monitor, Info } from 'lucide-react'
+import { X, Settings, Calendar, Bell, Sun, Moon, Monitor, Info, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
 import { useSettingsStore, type DefaultDeadlineRule } from '@/stores/settingsStore'
 import { useTheme } from '@/hooks/useTheme'
+import { useNavigate } from 'react-router-dom'
 import packageJson from '../../package.json'
 
 export function SettingsModal() {
     const { defaultDeadlineRule, setDefaultDeadlineRule, isSettingsOpen, setIsSettingsOpen } = useSettingsStore()
     const { theme, setTheme } = useTheme()
+    const navigate = useNavigate()
 
     if (!isSettingsOpen) return null
 
     const onClose = () => setIsSettingsOpen(false)
+
+    const goToProfile = () => {
+        onClose()
+        navigate('/profile')
+    }
 
     const rules: { id: DefaultDeadlineRule; label: string; description: string }[] = [
         { id: 'none', label: 'Aucune', description: 'Pas de date d\'échéance par défaut.' },
@@ -41,6 +48,21 @@ export function SettingsModal() {
                     </div>
 
                     <GlassCardContent className="p-6 space-y-8">
+                        {/* Profile Section */}
+                        <section>
+                            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                Compte
+                            </h4>
+                            <Button
+                                onClick={goToProfile}
+                                className="w-full justify-start h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+                            >
+                                <User className="h-5 w-5 mr-2" />
+                                Mon Profil
+                            </Button>
+                        </section>
+
                         {/* Appearance Section */}
                         <section>
                             <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">

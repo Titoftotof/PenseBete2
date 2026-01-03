@@ -15,6 +15,7 @@ import { BottomTabBar } from '@/components/BottomTabBar'
 import { SwipeableItem } from '@/components/SwipeableItem'
 import { DraggableList } from '@/components/DraggableList'
 import type { List, ListCategory } from '@/types'
+import type { SharedList } from '@/stores/shareStore'
 
 const categories: { id: ListCategory; label: string; icon: React.ReactNode; color: string; gradient: string }[] = [
   { id: 'shopping', label: 'Courses', icon: <ShoppingCart className="h-6 w-6" />, color: 'bg-green-500', gradient: 'from-green-400 to-emerald-500' },
@@ -32,18 +33,47 @@ export default function DashboardPage() {
   const [showSidebar, setShowSidebar] = useState(false)
   const [sharingList, setSharingList] = useState<List | null>(null)
 
-  const { lists, fetchLists, deleteList, reorderLists, loading } = useListStore()
+  const { lists, fetchLists, deleteList, reorderLists, loading, allItems, fetchAllItems } = useListStore()
   const { folders } = useFolderStore()
-  const { fetchSharedWithMe, sharedWithMe } = useShareStore()
+  const { fetchSharedWithMe, sharedWithMe, reorderSharedLists, removeSharedList } = useShareStore()
 
   useEffect(() => {
     fetchLists()
     fetchSharedWithMe()
-  }, [fetchLists, fetchSharedWithMe])
+    fetchAllItems()
+  }, [fetchLists, fetchSharedWithMe, fetchAllItems])
+
+  // Convert SharedList to List for rendering
+  const listFromShare = (share: SharedList): List => ({
+    id: share.list_id,
+    name: share.list_name || 'Sans nom',
+    category: share.list_category as ListCategory,
+    folder_id: undefined,
+    user_id: '',  // Not needed for display
+    position: share.position || 0,
+    created_at: share.created_at,
+    updated_at: share.created_at
+  })
+
+  // Get shared lists for current category
+  const sharedListsInCategory = useMemo(() => {
+    if (!selectedCategory) return []
+    return sharedWithMe.filter(
+      share => share.list_category === selectedCategory
+    )
+  }, [sharedWithMe, selectedCategory])
 
   // Filter lists based on search, folder, and category
   const filteredLists = useMemo(() => {
     let result = lists
+
+    // Get the list_ids of shared lists to exclude them from owned lists
+    const sharedListIds = selectedCategory
+      ? sharedListsInCategory.map(s => s.list_id)
+      : sharedWithMe.map(s => s.list_id)
+
+    // Exclude shared lists from owned lists (to avoid duplicates)
+    result = result.filter((list) => !sharedListIds.includes(list.id))
 
     // Filter by folder
     if (selectedFolderId) {
@@ -62,13 +92,22 @@ export default function DashboardPage() {
     }
 
     return result
-  }, [lists, selectedFolderId, selectedCategory, searchQuery])
+  }, [lists, selectedFolderId, selectedCategory, searchQuery, sharedWithMe, sharedListsInCategory])
 
   const getListCountByCategory = (category: ListCategory) => {
     const baseLists = selectedFolderId
       ? lists.filter((list) => list.folder_id === selectedFolderId)
       : lists
-    return baseLists.filter((list) => list.category === category).length
+
+    // Count owned lists
+    const ownedCount = baseLists.filter((list) => list.category === category).length
+
+    // Count shared lists (only if no folder selected, as shared lists don't have folders)
+    const sharedCount = !selectedFolderId
+      ? sharedWithMe.filter((share) => share.list_category === category).length
+      : 0
+
+    return ownedCount + sharedCount
   }
 
   const listCounts = useMemo(() => ({
@@ -76,7 +115,7 @@ export default function DashboardPage() {
     tasks: getListCountByCategory('tasks'),
     ideas: getListCountByCategory('ideas'),
     notes: getListCountByCategory('notes'),
-  }), [lists, selectedFolderId])
+  }), [lists, selectedFolderId, sharedWithMe])
 
   const handleCategoryClick = (category: ListCategory) => {
     setSelectedCategory(category)
@@ -107,6 +146,14 @@ export default function DashboardPage() {
     if (!folderId) return null
     const folder = folders.find((f) => f.id === folderId)
     return folder?.name
+  }
+
+  // Count items for a list (completed/total)
+  const getListItemCount = (listId: string) => {
+    const listItems = allItems.filter(item => item.list_id === listId && !item.is_archived)
+    const completed = listItems.filter(item => item.is_completed).length
+    const total = listItems.length
+    return { completed, total }
   }
 
   // If a list is selected, show the list detail view
@@ -175,55 +222,66 @@ export default function DashboardPage() {
               items={filteredLists}
               onReorder={(newLists) => reorderLists(newLists)}
               disabled={!!searchQuery}
-              renderItem={(list, dragHandle) => (
-                <SwipeableItem
-                  onDelete={() => {
-                    if (confirm('Supprimer cette liste ?')) {
-                      deleteList(list.id)
-                    }
-                  }}
-                >
-                  <GlassCard
-                    className="cursor-pointer"
-                    onClick={() => handleListClick(list)}
-                    hover={false}
+              renderItem={(list, dragHandle) => {
+                const categoryInfo = categories.find((c) => c.id === list.category)!
+                const { completed, total } = getListItemCount(list.id)
+                return (
+                  <SwipeableItem
+                    onDelete={() => {
+                      if (confirm('Supprimer cette liste ?')) {
+                        deleteList(list.id)
+                      }
+                    }}
                   >
-                    <GlassCardContent className="flex items-center gap-3 p-4">
-                      {dragHandle}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold">{list.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {getFolderName(list.folder_id) && (
-                            <span className="mr-2">
-                              <FolderOpen className="h-3 w-3 inline mr-1" />
-                              {getFolderName(list.folder_id)}
+                    <GlassCard
+                      className="cursor-pointer"
+                      onClick={() => handleListClick(list)}
+                      hover={false}
+                    >
+                      <GlassCardContent className="p-4 flex flex-col gap-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {dragHandle}
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
+                              {categoryInfo.icon}
+                            </div>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {categoryInfo.label}
+                              {getFolderName(list.folder_id) && ` • ${getFolderName(list.folder_id)}`}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 shrink-0" data-no-swipe="true">
+                            <Button
+                              variant="glass"
+                              size="icon"
+                              className="rounded-xl h-8 w-8"
+                              onClick={(e) => handleShareList(e, list)}
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="glass"
+                              size="icon"
+                              className="rounded-xl text-red-500 h-8 w-8"
+                              onClick={(e) => handleDeleteList(e, list.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{list.name}</h3>
+                          {total > 0 && (
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {completed}/{total}
                             </span>
                           )}
-                          Créée le {new Date(list.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                      <div className="flex gap-1 shrink-0" data-no-swipe="true">
-                        <Button
-                          variant="glass"
-                          size="icon"
-                          className="rounded-xl"
-                          onClick={(e) => handleShareList(e, list)}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="glass"
-                          size="icon"
-                          className="rounded-xl text-red-500"
-                          onClick={(e) => handleDeleteList(e, list.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </GlassCardContent>
-                  </GlassCard>
-                </SwipeableItem>
-              )}
+                        </div>
+                      </GlassCardContent>
+                    </GlassCard>
+                  </SwipeableItem>
+                )
+              }}
             />
           ) : (
             <GlassCard className="border-dashed border-2" hover={false}>
@@ -242,6 +300,86 @@ export default function DashboardPage() {
                 )}
               </GlassCardContent>
             </GlassCard>
+          )}
+
+          {/* Shared lists in this category */}
+          {sharedListsInCategory.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+                Listes partagées
+              </h2>
+              <DraggableList
+                items={sharedListsInCategory}
+                onReorder={reorderSharedLists}
+                disabled={false}
+                renderItem={(share, dragHandle) => {
+                  const list = listFromShare(share)
+                  const categoryInfo = categories.find((c) => c.id === list.category) || categories[0]
+                  const { completed, total } = getListItemCount(share.list_id)
+                  return (
+                    <SwipeableItem
+                      onDelete={() => {
+                        if (confirm('Retirer cette liste partagée ?')) {
+                          removeSharedList(share.id)
+                        }
+                      }}
+                    >
+                      <GlassCard
+                        className="cursor-pointer"
+                        onClick={() => handleListClick(list)}
+                        hover={false}
+                      >
+                        <GlassCardContent className="p-4 flex flex-col gap-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {dragHandle}
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
+                                <Users className="h-4 w-4" />
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {share.owner_name ? `Partagé par ${share.owner_name}` : 'Partagé avec moi'}
+                              </p>
+                            </div>
+                            <div className="flex gap-1 shrink-0" data-no-swipe="true">
+                              <Button
+                                variant="glass"
+                                size="icon"
+                                className="rounded-xl h-8 w-8"
+                                onClick={(e) => handleShareList(e, list)}
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="glass"
+                                size="icon"
+                                className="rounded-xl text-red-500 h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (confirm('Retirer cette liste partagée ?')) {
+                                    removeSharedList(share.id)
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{list.name}</h3>
+                            {total > 0 && (
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {completed}/{total}
+                              </span>
+                            )}
+                          </div>
+                        </GlassCardContent>
+                      </GlassCard>
+                    </SwipeableItem>
+                  )
+                }}
+              />
+            </div>
           )}
         </main>
 
@@ -361,53 +499,95 @@ export default function DashboardPage() {
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
-                Partagé avec moi
+                Listes partagées
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sharedWithMe.map((share) => {
-                  if (!share.list_name) return null
+              <DraggableList
+                items={sharedWithMe.filter(s => s.list_name)}
+                onReorder={reorderSharedLists}
+                disabled={false}
+                renderItem={(share, dragHandle) => {
                   const categoryInfo = categories.find((c) => c.id === share.list_category) || categories[0]
+                  const { completed, total } = getListItemCount(share.list_id)
+
+                  // Construct a List object from the share info
+                  const list: List = {
+                    id: share.list_id,
+                    name: share.list_name!,
+                    category: share.list_category as ListCategory,
+                    folder_id: undefined,
+                    user_id: '',
+                    position: 0,
+                    created_at: share.created_at,
+                    updated_at: share.created_at
+                  }
 
                   return (
-                    <GlassCard
-                      key={share.id}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        // Construct a List object from the share info
-                        const list: List = {
-                          id: share.list_id,
-                          name: share.list_name!,
-                          category: share.list_category as ListCategory,
-                          folder_id: undefined,
-                          user_id: '', // Not needed for display
-                          position: 0,
-                          created_at: share.created_at,
-                          updated_at: share.created_at
+                    <SwipeableItem
+                      onDelete={() => {
+                        if (confirm('Retirer cette liste partagée ?')) {
+                          removeSharedList(share.id)
                         }
-                        handleListClick(list)
                       }}
-                      hover={false}
                     >
-                      <GlassCardContent className="p-4 flex flex-col gap-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
-                              <Users className="h-4 w-4" />
+                      <GlassCard
+                        className="cursor-pointer"
+                        onClick={() => handleListClick(list)}
+                        hover={false}
+                      >
+                        <GlassCardContent className="p-4 flex flex-col gap-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {dragHandle}
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
+                                {categoryInfo.icon}
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                Partagé par {share.owner_name || 'quelqu\'un'}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              Partagé avec moi
-                            </p>
+                            <div className="flex gap-1 shrink-0" data-no-swipe="true">
+                              <Button
+                                variant="glass"
+                                size="icon"
+                                className="rounded-xl h-8 w-8"
+                                onClick={(e) => handleShareList(e, list)}
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="glass"
+                                size="icon"
+                                className="rounded-xl text-red-500 h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (confirm('Retirer cette liste partagée ?')) {
+                                    removeSharedList(share.id)
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 text-xs font-medium shrink-0">
-                            {share.permission === 'write' ? 'Édition' : 'Lecture'}
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{share.list_name}</h3>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {total > 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  {completed}/{total}
+                                </span>
+                              )}
+                              <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-muted/50">
+                                {share.permission === 'write' ? 'Édition' : 'Lecture'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{share.list_name}</h3>
-                      </GlassCardContent>
-                    </GlassCard>
+                        </GlassCardContent>
+                      </GlassCard>
+                    </SwipeableItem>
                   )
-                })}
-              </div>
+                }}
+              />
             </div>
           )}
 
@@ -424,6 +604,7 @@ export default function DashboardPage() {
                 disabled={!!searchQuery}
                 renderItem={(list, dragHandle) => {
                   const categoryInfo = categories.find((c) => c.id === list.category)!
+                  const { completed, total } = getListItemCount(list.id)
                   return (
                     <SwipeableItem
                       onDelete={() => {
@@ -468,7 +649,14 @@ export default function DashboardPage() {
                               </Button>
                             </div>
                           </div>
-                          <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{list.name}</h3>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold whitespace-pre-wrap break-words w-full">{list.name}</h3>
+                            {total > 0 && (
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {completed}/{total}
+                              </span>
+                            )}
+                          </div>
                         </GlassCardContent>
                       </GlassCard>
                     </SwipeableItem>

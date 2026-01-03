@@ -12,6 +12,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -21,6 +24,13 @@ export default function LoginPage() {
     setMessage(null)
 
     if (mode === 'signup') {
+      // Validate name fields
+      if (!firstName.trim() || !lastName.trim()) {
+        setMessage({ type: 'error', text: 'Le prénom et le nom sont requis' })
+        setLoading(false)
+        return
+      }
+
       if (password !== confirmPassword) {
         setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas' })
         setLoading(false)
@@ -36,6 +46,13 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            username: username.trim() || null,
+          }
+        }
       })
 
       if (error) {
@@ -61,6 +78,9 @@ export default function LoginPage() {
     setMessage(null)
     setPassword('')
     setConfirmPassword('')
+    setFirstName('')
+    setLastName('')
+    setUsername('')
   }
 
   return (
@@ -92,6 +112,44 @@ export default function LoginPage() {
                 className="glass-input h-12 rounded-xl"
               />
             </div>
+            {mode === 'signup' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      placeholder="Prénom"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="glass-input h-12 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      placeholder="Nom"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="glass-input h-12 rounded-xl"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    placeholder="Pseudo (facultatif)"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                    className="glass-input h-12 rounded-xl"
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Input
                 type="password"

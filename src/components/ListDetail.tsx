@@ -7,13 +7,15 @@ import { SwipeableItem } from '@/components/SwipeableItem'
 import { FrequentItemsSuggestions } from '@/components/FrequentItemsSuggestions'
 import { VoiceInputButton } from '@/components/VoiceInputButton'
 import { DateTimePicker } from '@/components/DateTimePicker'
-import { ArrowLeft, Plus, Trash2, Check, GripVertical, Flag, Archive, Undo, Layers, List as ListIcon, Bell, BellOff, Calendar } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Check, GripVertical, Flag, Archive, Undo, Layers, List as ListIcon, Bell, BellOff, Calendar, Users } from 'lucide-react'
 import { useListStore } from '@/stores/listStore'
+import { useShareStore } from '@/stores/shareStore'
 import { useFrequentItemsStore } from '@/stores/frequentItemsStore'
 import { useReminderStore } from '@/stores/reminderStore'
 import { useSettingsStore, type DefaultDeadlineRule } from '@/stores/settingsStore'
 import { parseVoiceInputWithPriorities } from '@/lib/voiceParser'
 import { categorizeItem, getCategoryColor } from '@/lib/categorizer'
+import { supabase } from '@/lib/supabase'
 import type { List, ListItem, Priority, Reminder } from '@/types'
 import {
   DndContext,
@@ -220,8 +222,10 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   const [parsedVoiceItems, setParsedVoiceItems] = useState<Array<{ content: string; priority: Priority }> | null>(null)
   const [reminderPickerItem, setReminderPickerItem] = useState<ListItem | null>(null)
   const [listName, setListName] = useState(list.name)
+  const [sharedInfo, setSharedInfo] = useState<{ owner_name?: string; permission?: string } | null>(null)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const { items, fetchItems, createItem, toggleItemComplete, deleteItem, updateItem, reorderItems, archiveItem, unarchiveItem, loading } = useListStore()
+  const { sharedWithMe } = useShareStore()
   const { trackItem } = useFrequentItemsStore()
   const { createReminder, getReminderByItemId, deleteReminder, updateReminder, fetchReminders } = useReminderStore()
   const { defaultDeadlineRule } = useSettingsStore()
@@ -267,6 +271,30 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
   useEffect(() => {
     setListName(list.name)
   }, [list.id, list.name])
+
+  // Check if list is shared and get sharing info
+  useEffect(() => {
+    const checkIfShared = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // If list.user_id is different from current user, it's a shared list
+      if (list.user_id && list.user_id !== user.id) {
+        // Find in sharedWithMe
+        const share = sharedWithMe.find(s => s.list_id === list.id)
+        if (share) {
+          setSharedInfo({
+            owner_name: share.owner_name,
+            permission: share.permission
+          })
+        }
+      } else {
+        setSharedInfo(null)
+      }
+    }
+
+    checkIfShared()
+  }, [list.id, list.user_id, sharedWithMe])
 
   useEffect(() => {
     if (titleRef.current) {
@@ -443,6 +471,17 @@ export function ListDetail({ list, onBack }: ListDetailProps) {
           {groupedByCategory ? <ListIcon className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
         </Button>
       </div>
+
+      {/* Shared list indicator */}
+      {sharedInfo && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4 text-blue-500" />
+          <span>Partagé par {sharedInfo.owner_name || 'quelqu\'un'}</span>
+          <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 text-xs font-medium">
+            {sharedInfo.permission === 'write' ? 'Édition' : 'Lecture seule'}
+          </span>
+        </div>
+      )}
 
       {/* Add item form */}
       <form onSubmit={handleAddItem} className="flex gap-2">

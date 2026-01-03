@@ -5,7 +5,8 @@ import type { List, ListItem, ListCategory } from '@/types'
 interface ListStore {
   lists: List[]
   currentList: List | null
-  items: ListItem[]
+  items: ListItem[]        // Items for the current list (used by ListDetail)
+  allItems: ListItem[]     // All items across all lists (used by Dashboard for counters)
   loading: boolean
   error: string | null
 
@@ -33,7 +34,8 @@ interface ListStore {
 export const useListStore = create<ListStore>((set, get) => ({
   lists: [],
   currentList: null,
-  items: [],
+  items: [],      // Current list items (for ListDetail)
+  allItems: [],   // All items (for Dashboard counters)
   loading: false,
   error: null,
 
@@ -178,7 +180,7 @@ export const useListStore = create<ListStore>((set, get) => ({
     }
   },
 
-  // Fetch all items (for calendar and reminders)
+  // Fetch all items (for dashboard counters)
   fetchAllItems: async () => {
     set({ loading: true, error: null })
     const { data, error } = await supabase
@@ -189,7 +191,7 @@ export const useListStore = create<ListStore>((set, get) => ({
     if (error) {
       set({ error: error.message, loading: false })
     } else {
-      set({ items: data || [], loading: false })
+      set({ allItems: data || [], loading: false })
     }
   },
 
@@ -197,7 +199,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   createItem: async (listId: string, content: string, dueDate?: string | null) => {
     set({ loading: true, error: null })
 
-    // Get the max position
+    // Get the max position from current list items
     const { items } = get()
     const maxPosition = items.length > 0
       ? Math.max(...items.map(i => i.position)) + 1
@@ -215,7 +217,8 @@ export const useListStore = create<ListStore>((set, get) => ({
     }
 
     set((state) => ({
-      items: [...state.items, data],
+      items: [...state.items, data],      // Add to current list items
+      allItems: [...state.allItems, data], // Add to all items
       loading: false
     }))
     return data
@@ -236,6 +239,9 @@ export const useListStore = create<ListStore>((set, get) => ({
         items: state.items.map((item) =>
           item.id === id ? { ...item, ...updates } : item
         ),
+        allItems: state.allItems.map((item) =>
+          item.id === id ? { ...item, ...updates } : item
+        ),
       }))
     }
   },
@@ -253,6 +259,7 @@ export const useListStore = create<ListStore>((set, get) => ({
     } else {
       set((state) => ({
         items: state.items.filter((item) => item.id !== id),
+        allItems: state.allItems.filter((item) => item.id !== id),
       }))
     }
   },

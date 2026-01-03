@@ -12,6 +12,8 @@ export interface SharedList {
   created_at: string
   list_name?: string
   list_category?: string
+  owner_name?: string
+  position?: number
 }
 
 interface ShareStore {
@@ -25,6 +27,8 @@ interface ShareStore {
   removeShare: (shareId: string) => Promise<void>
   fetchSharedWithMe: () => Promise<void>
   sharedWithMe: SharedList[]
+  reorderSharedLists: (newLists: SharedList[]) => Promise<void>
+  removeSharedList: (shareId: string) => Promise<void>
 }
 
 export const useShareStore = create<ShareStore>((set) => ({
@@ -53,6 +57,14 @@ export const useShareStore = create<ShareStore>((set) => ({
   shareList: async (listId: string, email: string, permission: SharePermission, listName: string, listCategory: string) => {
     set({ loading: true, error: null })
 
+    // Get current user info
+    const { data: { user } } = await supabase.auth.getUser()
+    const ownerId = user?.id
+
+    // Get display name from user metadata (username or first_name)
+    const userMetadata = user?.user_metadata as { first_name?: string; last_name?: string; username?: string } | undefined
+    const displayName = userMetadata?.username || userMetadata?.first_name || 'Utilisateur'
+
     const { data, error } = await supabase
       .from('shared_lists')
       .insert({
@@ -61,6 +73,8 @@ export const useShareStore = create<ShareStore>((set) => ({
         permission,
         list_name: listName,
         list_category: listCategory,
+        owner_id: ownerId,
+        owner_name: displayName,
       })
       .select()
       .single()
@@ -133,6 +147,43 @@ export const useShareStore = create<ShareStore>((set) => ({
       set({ error: error.message, loading: false })
     } else {
       set({ sharedWithMe: data || [], loading: false })
+    }
+  },
+
+  // Reorder shared lists (for drag and drop)
+  reorderSharedLists: async (newLists: SharedList[]) => {
+    set({ sharedWithMe: newLists })
+
+    // Update positions in database
+    const updates = newLists.map((list, index) => ({
+      id: list.id,
+      position: index,
+    }))
+
+    for (const update of updates) {
+      await supabase
+        .from('shared_lists')
+        .update({ position: update.position })
+        .eq('id', update.id)
+    }
+  },
+
+  // Remove a shared list from the user's view (for the recipient)
+  removeSharedList: async (shareId: string) => {
+    set({ loading: true, error: null })
+    const { error } = await supabase
+      .from('shared_lists')
+      .delete()
+      .eq('id', shareId)
+
+    if (error) {
+      set({ error: error.message, loading: false })
+    } else {
+      set((state) => ({
+        sharedWithMe: state.sharedWithMe.filter((share) => share.id !== shareId),
+        shares: state.shares.filter((share) => share.id !== shareId),
+        loading: false,
+      }))
     }
   },
 }))
