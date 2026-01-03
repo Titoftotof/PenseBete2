@@ -112,9 +112,9 @@ export default function DashboardPage() {
   // If a list is selected, show the list detail view
   if (selectedList) {
     return (
-      <div className="min-h-[100dvh] pb-32 md:pb-0">
+      <div className="min-h-[100dvh]">
         <Header />
-        <main className="container mx-auto px-4 py-6">
+        <main className="container mx-auto px-4 py-6 pb-40 pb-safe">
           <ListDetail list={selectedList} onBack={() => setSelectedList(null)} />
         </main>
         <BottomTabBar
@@ -138,9 +138,9 @@ export default function DashboardPage() {
     const categoryInfo = categories.find((c) => c.id === selectedCategory)!
 
     return (
-      <div className="min-h-[100dvh] pb-32 md:pb-0">
+      <div className="min-h-[100dvh]">
         <Header />
-        <main className="container mx-auto px-4 py-6">
+        <main className="container mx-auto px-4 py-6 pb-40 pb-safe">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Button
@@ -270,7 +270,7 @@ export default function DashboardPage() {
 
   // Default: show categories overview with sidebar
   return (
-    <div className="min-h-[100dvh] pb-32 md:pb-0">
+    <div className="min-h-[100dvh]">
       <Header />
 
       <div className="flex">
@@ -309,7 +309,7 @@ export default function DashboardPage() {
         )}
 
         {/* Main content */}
-        <main className="flex-1 container mx-auto px-4 py-6">
+        <main className="flex-1 container mx-auto px-4 py-6 pb-40 pb-safe">
           {/* Search */}
           <div className="mb-6">
             <SearchBar onSearch={setSearchQuery} placeholder="Rechercher une liste..." />
