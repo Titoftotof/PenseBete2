@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { showGlobalToast } from '@/components/ui/toast'
 import { subscribeToPush, unsubscribeFromPush, isPushSupported } from './pushNotifications'
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns'
+import { useReminderStore } from '@/stores/reminderStore'
 
 const NOTIFICATIONS_ENABLED_KEY = 'pensebete-notifications-enabled'
 
@@ -351,6 +352,9 @@ class NotificationService {
             .eq('id', reminderId)
 
           console.log('[Notifications] Scheduled next recurring reminder:', reminderId)
+
+          // Refresh the reminder store to update UI
+          useReminderStore.getState().fetchReminders()
         } else {
           // Non-recurring reminder: mark as sent in database
           await supabase
