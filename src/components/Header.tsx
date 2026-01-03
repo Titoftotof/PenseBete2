@@ -17,7 +17,9 @@ export function Header() {
   const isOnline = useOnlineStatus()
   const { pendingOperations, isSyncing, setOnlineStatus } = useSyncStore()
   const { isEnabled: notificationsEnabled, toggleNotifications, errorMessage, clearError, status } = useNotifications()
-  const { fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
+  // Subscribe to reminders state to trigger re-render when reminders are updated
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { reminders: _reminders, fetchReminders, getUpcomingReminders, deleteReminder } = useReminderStore()
   const { items, fetchAllItems } = useListStore()
   const { setIsSettingsOpen } = useSettingsStore()
   const location = useLocation()
