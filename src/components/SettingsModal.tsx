@@ -1,8 +1,9 @@
-import { X, Settings, Calendar, Bell, Sun, Moon, Monitor } from 'lucide-react'
+import { X, Settings, Calendar, Bell, Sun, Moon, Monitor, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
 import { useSettingsStore, type DefaultDeadlineRule } from '@/stores/settingsStore'
 import { useTheme } from '@/hooks/useTheme'
+import packageJson from '../../package.json'
 
 export function SettingsModal() {
     const { defaultDeadlineRule, setDefaultDeadlineRule, isSettingsOpen, setIsSettingsOpen } = useSettingsStore()
@@ -111,6 +112,19 @@ export function SettingsModal() {
                                         Les notifications de rappel doivent toujours être activées manuellement via l'icône de cloche.
                                     </p>
                                 </div>
+                            </div>
+                        </section>
+
+                        {/* Version Section */}
+                        <section className="pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground flex items-center gap-2">
+                                    <Info className="h-4 w-4" />
+                                    Version
+                                </span>
+                                <span className="font-mono font-semibold text-purple-500">
+                                    v{packageJson.version}
+                                </span>
                             </div>
                         </section>
                     </GlassCardContent>
