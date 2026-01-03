@@ -32,7 +32,7 @@ CREATE POLICY "User can see their shares" ON shared_lists
   FOR SELECT
   USING (
     shared_with_user_id = auth.uid() OR
-    shared_with_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+    shared_with_email = auth.jwt() ->> 'email'
   );
 
 -- Policy: Shared users can read lists
@@ -45,7 +45,7 @@ CREATE POLICY "Shared users can read lists" ON lists
       WHERE shared_lists.list_id = lists.id
       AND (
         shared_lists.shared_with_user_id = auth.uid() OR
-        shared_lists.shared_with_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        shared_lists.shared_with_email = auth.jwt() ->> 'email'
       )
     )
   );
@@ -61,7 +61,7 @@ CREATE POLICY "Shared users can write lists" ON lists
       AND shared_lists.permission = 'write'
       AND (
         shared_lists.shared_with_user_id = auth.uid() OR
-        shared_lists.shared_with_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        shared_lists.shared_with_email = auth.jwt() ->> 'email'
       )
     )
   );
@@ -80,7 +80,7 @@ CREATE POLICY "Shared users can read items" ON list_items
           WHERE shared_lists.list_id = lists.id
           AND (
             shared_lists.shared_with_user_id = auth.uid() OR
-            shared_lists.shared_with_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+            shared_lists.shared_with_email = auth.jwt() ->> 'email'
           )
         )
       )
@@ -102,7 +102,7 @@ CREATE POLICY "Shared users can write items" ON list_items
           AND shared_lists.permission = 'write'
           AND (
             shared_lists.shared_with_user_id = auth.uid() OR
-            shared_lists.shared_with_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+            shared_lists.shared_with_email = auth.jwt() ->> 'email'
           )
         )
       )
